@@ -2,6 +2,7 @@ package P2P.App;
 
 import java.net.InetSocketAddress;
 
+import P2P.PeerTracker.Client.Reporter;
 import P2P.PeerTracker.Message.Message;
 import P2P.util.FileInfo;
 
@@ -12,8 +13,10 @@ public class PeerController implements PeerControllerIface {
 	private PeerShellIface shell;
 
 	private byte currentCommand;
-
-    public PeerController() {
+	private Reporter reporter;
+	
+    public PeerController(Reporter reporter) {
+    	this.reporter = reporter;
     	shell = new PeerShell();
     }
 	
@@ -58,14 +61,26 @@ public class PeerController implements PeerControllerIface {
 
 	@Override
 	public void processCurrentCommand() {
-		// TODO Auto-generated method stub
+		switch(currentCommand) {
+			case PeerCommands.COM_CONFIG: {
+				Message m = createMessageFromCurrentCommand();
+				reporter.conversationWithTracker(m);
+			}
+			default:;
+		}
 		
 	}
 
 	@Override
 	public Message createMessageFromCurrentCommand() {
-		// TODO Auto-generated method stub
-		return null;
+		Message m;
+		switch(currentCommand) {
+			case PeerCommands.COM_CONFIG: {
+				m = Message.makeGetConfRequest();
+			}
+			default: m=null;
+		}
+		return m;
 	}
 
 	@Override

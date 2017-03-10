@@ -16,6 +16,10 @@ public class Reporter implements ReporterIface {
 	 */
 	private DatagramSocket peerTrackerSocket;
 
+	private InetSocketAddress addr;
+	public final int PORT = 4451;
+	public final int MAX_MSG_SIZE_BYTES = 1024;
+	
 	/***
 	 * 
 	 * @param tracker
@@ -23,8 +27,9 @@ public class Reporter implements ReporterIface {
 	 */
 	public Reporter(String tracker) {
 		trackerHostname = tracker;
+		addr = new InetSocketAddress(trackerHostname,PORT);
 		try {
-			peerTrackerSocket = new DatagramSocket();
+			peerTrackerSocket = new DatagramSocket(addr);
 		} catch (SocketException e) {
 			e.printStackTrace();
 			System.err
@@ -53,7 +58,8 @@ public class Reporter implements ReporterIface {
 
 	@Override
 	public Message conversationWithTracker(Message request) {
-		// TODO Auto-generated method stub
+		sendMessageToTracker(peerTrackerSocket,request,addr);
+		receiveMessageFromTracker(peerTrackerSocket);
 		return null;
 	}
 
