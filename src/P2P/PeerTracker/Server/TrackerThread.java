@@ -49,7 +49,7 @@ public class TrackerThread extends Thread {
 				// 1) Receive request
 				DatagramPacket packet = new DatagramPacket(buf, buf.length);
 				socket.receive(packet);
-
+				
 				// 2) Figure out client 
 				InetSocketAddress clientId = (InetSocketAddress) packet.getSocketAddress();
 

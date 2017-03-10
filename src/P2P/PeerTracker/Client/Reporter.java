@@ -1,6 +1,8 @@
 package P2P.PeerTracker.Client;
 
+import java.io.IOException;
 import java.net.*;
+import java.util.concurrent.SynchronousQueue;
 
 import P2P.PeerTracker.Message.Message;
 
@@ -46,21 +48,42 @@ public class Reporter implements ReporterIface {
 	@Override
 	public boolean sendMessageToTracker(DatagramSocket socket, Message request,
 			InetSocketAddress trackerAddress) {
-		// TODO Auto-generated method stub
-		return false;
+		
+		byte[] buf = request.toByteArray();
+		DatagramPacket pckt = new DatagramPacket(buf, buf.length,addr);
+		try{
+			
+		socket.send(pckt);
+		}catch(IOException e){}
+		System.out.println(pckt.getData());
+		System.out.println(buf);
+		System.out.println(socket.isConnected());
+		
+		return socket.isConnected();
 	}
 
 	@Override
 	public Message receiveMessageFromTracker(DatagramSocket socket) {
-		// TODO Auto-generated method stub
-		return null;
+		
+		byte[] buf = new byte [Message.MAX_UDP_PACKET_LENGTH];
+		
+		
+		DatagramPacket pckt = new DatagramPacket(buf, buf.length);
+		try{
+			socket.receive(pckt);
+			}catch(IOException e){}
+		
+		
+		socket.close();
+		
+		
+		return Message.parseResponse(pckt.getData());
 	}
 
 	@Override
 	public Message conversationWithTracker(Message request) {
 		sendMessageToTracker(peerTrackerSocket,request,addr);
-		receiveMessageFromTracker(peerTrackerSocket);
-		return null;
+		return receiveMessageFromTracker(peerTrackerSocket);
 	}
 
 
