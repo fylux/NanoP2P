@@ -64,9 +64,8 @@ public class PeerController implements PeerControllerIface {
 	public void processCurrentCommand() {
 		switch(currentCommand) {
 			case PeerCommands.COM_CONFIG: {
-				Message request = createMessageFromCurrentCommand();
-				Message response = reporter.conversationWithTracker(request);
-				processMessageFromTracker(response);
+				Message m = createMessageFromCurrentCommand();
+				reporter.conversationWithTracker(m);
 			}
 			default:;
 		}
