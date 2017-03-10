@@ -66,7 +66,8 @@ public class PeerController implements PeerControllerIface {
 				Message m = createMessageFromCurrentCommand();
 				reporter.conversationWithTracker(m);
 			}
-			default:;
+			default:
+				;
 		}
 		
 	}
