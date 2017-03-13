@@ -1,19 +1,31 @@
 package P2P.App;
 
-import java.io.IOException;
 import java.util.Scanner;
 
 public class PeerShell implements PeerShellIface {
 	
 	private String line;
 	
+	private Scanner in;
+	
+	public PeerShell() {
+		in = new Scanner(System.in);
+	}
+	
+	/*public void close() {
+		in.close();
+	}*/
+	
 	@Override
 	public byte getCommand() {
-		// TODO Auto-generated method stub
-		if (line == "QUERY_FILES")
+		if (line.equals("query")) {
 			return PeerCommands.COM_QUERY;
-		else
+		}
+		else if (line.equals("quit"))
+			return PeerCommands.COM_QUIT;
+		else {
 			return 0;
+		}
 	}
 
 	@Override
@@ -24,10 +36,7 @@ public class PeerShell implements PeerShellIface {
 
 	@Override
 	public void readCommand() {
-		// TODO Auto-generated method stub
-		/*Scanner in = new Scanner(System.in);
 		line = in.nextLine();
-		in.close();*/
 	}
 
 }

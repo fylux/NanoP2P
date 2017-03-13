@@ -5,6 +5,7 @@ import java.net.InetSocketAddress;
 import P2P.PeerTracker.Client.Reporter;
 import P2P.PeerTracker.Message.Message;
 import P2P.PeerTracker.Message.MessageConf;
+import P2P.PeerTracker.Message.MessageFileInfo;
 import P2P.util.FileInfo;
 
 public class PeerController implements PeerControllerIface {
@@ -75,12 +76,21 @@ public class PeerController implements PeerControllerIface {
 		}
 		case PeerCommands.COM_QUERY: {
 			Message m = createMessageFromCurrentCommand();
-			System.out.println("Va bien");
+			processMessageFromTracker(reporter.conversationWithTracker(m));
+			break;
+		}
+		case PeerCommands.COM_DOWNLOAD: {
+			Message m = createMessageFromCurrentCommand();
+			//GET_SEEDS and ASK THEM
 			//processMessageFromTracker(reporter.conversationWithTracker(m));
 			break;
 		}
-		default:
-			;
+		case PeerCommands.COM_QUIT: {
+			Message m = createMessageFromCurrentCommand();
+			processMessageFromTracker(reporter.conversationWithTracker(m));
+			break;
+		}
+		default: System.out.println("default CurrentCommand");
 		}
 	}
 
@@ -98,7 +108,17 @@ public class PeerController implements PeerControllerIface {
 			break;
 		}
 		case PeerCommands.COM_QUERY: {
-			m = Message.makeQueryFilesRequest((byte)0, "");
+			m = Message.makeQueryFilesRequest((byte)1, "");
+			break;
+		}
+		case PeerCommands.COM_DOWNLOAD: {
+			m = Message.makeGetSeedsRequest("fileHash");
+			break;
+		}
+		case PeerCommands.COM_QUIT: {
+			FileInfo[] fileList = Peer.db.getLocalSharedFiles();
+			//TODO Set seed port as attribute
+			m = Message.makeRemoveSeedRequest(4000, fileList);
 			break;
 		}
 		default: m = null;
@@ -118,8 +138,17 @@ public class PeerController implements PeerControllerIface {
 			System.out.println(response.getOpCodeString());
 			break;
 		}
-		default:
+		case Message.OP_FILE_LIST: {
+			recordQueryResult(((MessageFileInfo)response).getFileList());
 			System.out.println(response.getOpCodeString());
+			break;
+		}
+		case Message.OP_REMOVE_SEED_ACK: {
+			System.out.println(response.getOpCodeString());
+			break;
+		}
+		default:
+			System.out.println("default: "+response.getOpCodeString());
 		}
 
 	}
