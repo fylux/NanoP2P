@@ -1,11 +1,16 @@
 package P2P.App;
 
 import java.net.InetSocketAddress;
+import java.util.ArrayList;
+import java.util.Arrays;
 
+import P2P.PeerPeer.Client.Downloader;
+import P2P.PeerPeer.Server.Seeder;
 import P2P.PeerTracker.Client.Reporter;
 import P2P.PeerTracker.Message.Message;
 import P2P.PeerTracker.Message.MessageConf;
 import P2P.PeerTracker.Message.MessageFileInfo;
+import P2P.PeerTracker.Message.MessageSeedInfo;
 import P2P.util.FileInfo;
 
 public class PeerController implements PeerControllerIface {
@@ -17,9 +22,15 @@ public class PeerController implements PeerControllerIface {
 	private byte currentCommand;
 	private Reporter reporter;
 
+	private int port;
+	private String[] args;
+	private FileInfo[] queryResult;
+	private short chunkSize;
+
 	public PeerController(Reporter reporter) {
 		this.reporter = reporter;
 		shell = new PeerShell();
+		port=4000;
 	}
 
 	public byte getCurrentCommand() {
@@ -57,8 +68,8 @@ public class PeerController implements PeerControllerIface {
 
 	@Override
 	public void setCurrentCommandArguments(String[] args) {
-		// TODO Auto-generated method stub
-
+		if (args!=null)
+			this.args = Arrays.copyOf(args,args.length);
 	}
 
 	@Override
@@ -81,11 +92,18 @@ public class PeerController implements PeerControllerIface {
 		}
 		case PeerCommands.COM_DOWNLOAD: {
 			Message m = createMessageFromCurrentCommand();
-			//GET_SEEDS and ASK THEM
-			//processMessageFromTracker(reporter.conversationWithTracker(m));
+			if (m != null)
+				processMessageFromTracker(reporter.conversationWithTracker(m));
+			break;
+		}
+		case PeerCommands.COM_SHOW: {
+			FileInfo[] fileList = Peer.db.getLocalSharedFiles();
+			for (FileInfo f: fileList)
+				System.out.println(f.fileName);
 			break;
 		}
 		case PeerCommands.COM_QUIT: {
+			shell.close();
 			Message m = createMessageFromCurrentCommand();
 			processMessageFromTracker(reporter.conversationWithTracker(m));
 			break;
@@ -96,32 +114,36 @@ public class PeerController implements PeerControllerIface {
 
 	@Override
 	public Message createMessageFromCurrentCommand() {
-		Message m;
+		Message m = null;
 		switch (currentCommand) {
-		case PeerCommands.COM_CONFIG: {
-			m = Message.makeGetConfRequest();
-			break;
-		}
-		case PeerCommands.COM_ADDSEED: {
-			FileInfo[] fileList = Peer.db.getLocalSharedFiles();
-			m = Message.makeAddSeedRequest(4000, fileList);
-			break;
-		}
-		case PeerCommands.COM_QUERY: {
-			m = Message.makeQueryFilesRequest((byte)1, "");
-			break;
-		}
-		case PeerCommands.COM_DOWNLOAD: {
-			m = Message.makeGetSeedsRequest("fileHash");
-			break;
-		}
-		case PeerCommands.COM_QUIT: {
-			FileInfo[] fileList = Peer.db.getLocalSharedFiles();
-			//TODO Set seed port as attribute
-			m = Message.makeRemoveSeedRequest(4000, fileList);
-			break;
-		}
-		default: m = null;
+			case PeerCommands.COM_CONFIG: {
+				m = Message.makeGetConfRequest();
+				break;
+			}
+			case PeerCommands.COM_ADDSEED: {
+				FileInfo[] fileList = Peer.db.getLocalSharedFiles();
+				m = Message.makeAddSeedRequest(port, fileList);
+				break;
+			}
+			case PeerCommands.COM_QUERY: {
+				m = Message.makeQueryFilesRequest((byte)1, "");
+				break;
+			}
+			case PeerCommands.COM_DOWNLOAD: {
+				FileInfo[] hash = lookupQueryResult(args[0]);
+				if (hash.length != 1)
+					System.out.println("Unknown File Hash");
+				else
+					m = Message.makeGetSeedsRequest(hash[0].fileHash);
+				break;
+			}
+			case PeerCommands.COM_QUIT: {
+				FileInfo[] fileList = Peer.db.getLocalSharedFiles();
+				m = Message.makeRemoveSeedRequest(port, fileList);
+				break;
+			}
+			default:
+				;
 		}
 		return m;
 	}
@@ -131,7 +153,8 @@ public class PeerController implements PeerControllerIface {
 
 		switch (response.getOpCode()) {
 		case Message.OP_SEND_CONF: {
-			System.out.println(((MessageConf) response).getChunkSize());
+			chunkSize=((MessageConf) response).getChunkSize();
+			System.out.println(chunkSize);
 			break;
 		}
 		case Message.OP_ADD_SEED_ACK: {
@@ -140,41 +163,56 @@ public class PeerController implements PeerControllerIface {
 		}
 		case Message.OP_FILE_LIST: {
 			recordQueryResult(((MessageFileInfo)response).getFileList());
-			System.out.println(response.getOpCodeString());
+			printQueryResult();
 			break;
 		}
 		case Message.OP_REMOVE_SEED_ACK: {
 			System.out.println(response.getOpCodeString());
 			break;
 		}
+		
+		case Message.OP_SEED_LIST: {
+			downloadFileFromSeeds( ((MessageSeedInfo)response).getSeedList(), ((MessageSeedInfo)response).getFileHash());
+			break;
+		}
 		default:
-			System.out.println("default: "+response.getOpCodeString());
+			;
 		}
 
 	}
 
 	@Override
 	public void recordQueryResult(FileInfo[] fileList) {
-		// TODO Auto-generated method stub
-
+		 queryResult= Arrays.copyOf(fileList,fileList.length);
 	}
 
 	@Override
 	public void printQueryResult() {
-		// TODO Auto-generated method stub
+		for (FileInfo s : queryResult) {
+				System.out.println(s);
+		}
 
 	}
 
 	@Override
 	public FileInfo[] lookupQueryResult(String hashSubstr) {
-		// TODO Auto-generated method stub
-		return null;
+		ArrayList<FileInfo> matched = new ArrayList<FileInfo>();
+		for (FileInfo s : queryResult)
+			if (s.fileHash.contains(hashSubstr))
+				matched.add(s);
+
+		return matched.toArray(new FileInfo[matched.size()]);
 	}
 
 	@Override
 	public void downloadFileFromSeeds(InetSocketAddress[] seedList, String targetFileHash) {
-		// TODO Auto-generated method stub
+		Downloader d = new Downloader();
+		d.downloadFile(seedList);
+	}
 
+	public void listenSeeder() {
+		Seeder d = new Seeder(chunkSize);
+		d.start();
 	}
 
 }

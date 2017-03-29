@@ -21,5 +21,10 @@ public interface PeerShellIface {
 	 * 
 	 */
 	void readCommand();
+	
+	/**
+	 * Close standard input
+	 */
+	void close();
 
 }

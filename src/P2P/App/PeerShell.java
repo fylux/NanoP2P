@@ -1,10 +1,12 @@
 package P2P.App;
 
+import java.util.Arrays;
 import java.util.Scanner;
 
 public class PeerShell implements PeerShellIface {
 	
-	private String line;
+	private byte command;
+	private String[] args;
 	
 	private Scanner in;
 	
@@ -12,31 +14,48 @@ public class PeerShell implements PeerShellIface {
 		in = new Scanner(System.in);
 	}
 	
-	/*public void close() {
+	public void close() {
 		in.close();
-	}*/
+	}
 	
 	@Override
 	public byte getCommand() {
-		if (line.equals("query")) {
-			return PeerCommands.COM_QUERY;
-		}
-		else if (line.equals("quit"))
-			return PeerCommands.COM_QUIT;
-		else {
-			return 0;
-		}
+		return command;
 	}
+	
 
 	@Override
 	public String[] getCommandArguments() {
-		// TODO Auto-generated method stub
-		return null;
+		return args;
 	}
 
 	@Override
 	public void readCommand() {
-		line = in.nextLine();
+		do {
+		args = null;
+		String[] words = in.nextLine().split(" ");
+		command = PeerCommands.stringToCommand(words[0]);
+
+		if (words.length > 1)
+			args = Arrays.copyOfRange(words,1, words.length);
+		
+		} while(!analyzeLine());
+		
+	}
+
+	private boolean analyzeLine() {
+		switch(command) {
+			case PeerCommands.COM_INVALID : {
+				PeerCommands.printCommandsHelp();
+				return false;
+			}
+			case PeerCommands.COM_DOWNLOAD : {
+				//Show rules
+				return args != null && args.length == 1;
+			}
+			
+			default: return true;
+		}
 	}
 
 }

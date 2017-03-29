@@ -29,6 +29,9 @@ public class Peer {
 		// Begin conversation with tracker by getting configuration (chunk size)
 		commander.getConfigFromTracker();
 		
+		//crear con el seeder
+		commander.listenSeeder();
+		
 		// Send list of local files to tracker 
 		commander.publishSharedFilesToTracker();
 		
