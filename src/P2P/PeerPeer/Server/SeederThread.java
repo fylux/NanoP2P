@@ -13,19 +13,26 @@ import P2P.PeerPeer.Message.PeerMessage;
 import P2P.util.PeerDatabase;
 
 public class SeederThread extends Thread {
-    private Socket socket = null;
+    private Socket socket;
 	private Downloader downloader;
+	protected DataOutputStream dos;
+	protected DataInputStream dis;
+	private short chunkSize;
 	/* Global buffer for performance reasons */
     private byte[] chunkDataBuf;
 
-    public SeederThread(Socket socket, PeerDatabase db, Downloader downloader, short chunkSize) {
+    public SeederThread(Socket socket, Downloader downloader, short chunkSize) {
+    	this.socket = socket;
+    	this.downloader = downloader;
+    	this.chunkSize = chunkSize;
+    	
     	try {
-			System.out.println(socket.getOutputStream());
+			dis = new DataInputStream(socket.getInputStream());
+			dos = new DataOutputStream(socket.getOutputStream());
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			System.out.println("Error creating Seeder Thread");
 		}
-    	//TODO
+		
     }
 
 	//Devuelve la lista de trozos que tiene del fichero solicitado
@@ -39,7 +46,12 @@ public class SeederThread extends Thread {
 
     //Método principal que coordina la recepción y envío de mensajes
     public void run() {
-    	
+    	System.out.println("Seed talking");
+    	try {
+			System.out.println(dis.readUTF());
+		} catch (IOException e1) {
+			e1.printStackTrace();
+		}
     }
 
 }

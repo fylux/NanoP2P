@@ -9,31 +9,41 @@ import java.net.SocketAddress;
 import P2P.PeerPeer.Client.Downloader;
 import P2P.util.PeerDatabase;
 
-/**
- * Servidor que se ejecuta en un hilo propio.
- * Creará objetos {@link SeederThread} cada vez que se conecte un cliente.
- */
+
 public class Seeder implements Runnable {
 	public static final int SEEDER_FIRST_PORT = 10000;
 	public static final int SEEDER_LAST_PORT = 10100;
 	public Downloader currentDownloader;
+	private int port;
+	private ServerSocket serverSocket;
+	private short chunkSize;
 
-	/**
-	 * Base de datos de ficheros locales compartidos por este peer.
-	 */
-	protected PeerDatabase database;
 
     public Seeder(short chunkSize)
     {
-    	//TODO
-    	//hay que sincronizar la asignacion de puertos(probar hasta que pueda en escuchar en uno)
+    	try {
+			serverSocket = new ServerSocket();
+		} catch (IOException e) {
+			System.out.println("Error creating server socket");
+		}
+    	port = getAvailablePort();
+    	this.chunkSize = chunkSize;
     }
 
-    //Pone al servidor a escuchar en un puerto libre del rango y devuelve cuál es dicho puerto
     public int getAvailablePort() {
-    	//TODO
-    
-    	return 0;
+    	int portRequested = SEEDER_FIRST_PORT;
+    	boolean valid;
+    	do {
+	    	try {
+				serverSocket.bind(new InetSocketAddress(portRequested));
+				valid = true;
+			} catch (IOException e) {
+				valid = false;
+				++portRequested;
+			}
+    	} while(!valid && portRequested <= SEEDER_LAST_PORT );
+    		
+    	return portRequested;
     }
     
     /** 
@@ -41,32 +51,13 @@ public class Seeder implements Runnable {
 	 */
 	public void run()
 	{
-		//TODO
-		//creados para quitar el warning
-		ServerSocket serverSocket=null;
-		Socket clientSocket = null;
-		try {
-			serverSocket = new ServerSocket();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		try {
-			serverSocket.bind(new InetSocketAddress(10001));
-			clientSocket = serverSocket.accept();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		int chunkSize=0;
-		//while forever
-		//En algún momento se llamará a
-		new SeederThread(clientSocket, database, currentDownloader, (short)chunkSize).start();
-		try {
-			serverSocket.close();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+		while (true) {
+			try {
+				Socket clientSocket = serverSocket.accept();
+				new SeederThread(clientSocket, currentDownloader, chunkSize).start();
+			} catch (IOException e1) {
+				System.out.println("Error accepting in client socket");
+			}
 		}
 	}
     
@@ -80,12 +71,11 @@ public class Seeder implements Runnable {
     }
     
     public void setCurrentDownloader(Downloader downloader) {
-    	//TODO
+    	currentDownloader = downloader;
     }
     
     public int getSeederPort() {
-    	//TODO
-    	return 0;
+    	return port;
     }
 }
  

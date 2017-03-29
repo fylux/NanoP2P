@@ -24,18 +24,13 @@ public class DownloaderThread  extends Thread {
 	private int numChunksDownloaded;
 
 	public DownloaderThread(Downloader dl, InetSocketAddress seed) {
+		downloader = dl;
 		try {
 			downloadSocket = new Socket(seed.getAddress(),seed.getPort());
+			dos = new DataOutputStream(downloadSocket.getOutputStream());
+			dis = new DataInputStream(downloadSocket.getInputStream());
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-
-		try {
-			dos.writeChars("Hola");
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			System.out.println("Error creating Download Thread");
 		}
 	}
 
@@ -54,7 +49,11 @@ public class DownloaderThread  extends Thread {
 
     //Main code to request chunk lists and chunks
     public void run() {
-    
+    	try {
+			dos.writeUTF("Hi Seeder");
+		} catch (IOException e) {
+			System.out.println("Error writing text");
+		}
     }
 
 }

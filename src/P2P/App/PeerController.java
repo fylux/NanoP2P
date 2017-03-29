@@ -30,7 +30,6 @@ public class PeerController implements PeerControllerIface {
 	public PeerController(Reporter reporter) {
 		this.reporter = reporter;
 		shell = new PeerShell();
-		port=4000;
 	}
 
 	public byte getCurrentCommand() {
@@ -208,10 +207,13 @@ public class PeerController implements PeerControllerIface {
 	public void downloadFileFromSeeds(InetSocketAddress[] seedList, String targetFileHash) {
 		Downloader d = new Downloader();
 		d.downloadFile(seedList);
+		System.out.println("my port: "+port);
 	}
 
 	public void listenSeeder() {
 		Seeder d = new Seeder(chunkSize);
+		port = d.getSeederPort();
+		System.out.println("my port: "+port);
 		d.start();
 	}
 

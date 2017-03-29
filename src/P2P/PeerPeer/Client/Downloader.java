@@ -7,6 +7,7 @@ import P2P.util.FileInfo;
 //nuevo
 public class Downloader implements DownloaderIface {
 
+	private InetSocketAddress[] seedList;
 	
 	@Override
 	public FileInfo getTargetFile() {
@@ -16,8 +17,7 @@ public class Downloader implements DownloaderIface {
 
 	@Override
 	public InetSocketAddress[] getSeeds() {
-		// TODO Auto-generated method stub
-		return null;
+		return seedList;
 	}
 
 	@Override
@@ -28,7 +28,6 @@ public class Downloader implements DownloaderIface {
 
 	@Override
 	public boolean downloadFile(InetSocketAddress[] seedList) {
-		// TODO Auto-generated method stub
 		DownloaderThread d = new DownloaderThread(this,seedList[0]);
 		d.start();
 		return false;
