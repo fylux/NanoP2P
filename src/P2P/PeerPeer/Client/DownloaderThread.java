@@ -8,7 +8,6 @@ import java.io.RandomAccessFile;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 
-import P2P.PeerPeer.Message.PeerMessage;
 /**
  * @author rtitos
  * 

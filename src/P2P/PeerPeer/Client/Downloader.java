@@ -1,7 +1,6 @@
 package P2P.PeerPeer.Client;
 
 import java.net.InetSocketAddress;
-
 import P2P.util.FileInfo;
 
 //nuevo

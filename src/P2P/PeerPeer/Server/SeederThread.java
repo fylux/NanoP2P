@@ -9,7 +9,6 @@ import java.net.Socket;
 import java.net.SocketAddress;
 
 import P2P.PeerPeer.Client.Downloader;
-import P2P.PeerPeer.Message.PeerMessage;
 import P2P.util.PeerDatabase;
 
 public class SeederThread extends Thread {

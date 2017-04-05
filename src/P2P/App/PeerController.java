@@ -208,6 +208,7 @@ public class PeerController implements PeerControllerIface {
 		Downloader d = new Downloader(lookupQueryResult(targetFileHash)[0],chunkSize);
 		d.downloadFile(seedList);
 		System.out.println("my port: "+port);
+		
 	}
 
 	public void listenSeeder() {
