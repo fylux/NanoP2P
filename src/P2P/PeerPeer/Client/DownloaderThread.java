@@ -23,8 +23,8 @@ public class DownloaderThread  extends Thread {
 	protected DataInputStream dis;
 	private int numChunksDownloaded;
 
-	public DownloaderThread(Downloader dl, InetSocketAddress seed) {
-		downloader = dl;
+	public DownloaderThread(Downloader downloader, InetSocketAddress seed) {
+		this.downloader = downloader;
 		try {
 			downloadSocket = new Socket(seed.getAddress(),seed.getPort());
 			dos = new DataOutputStream(downloadSocket.getOutputStream());
@@ -49,11 +49,14 @@ public class DownloaderThread  extends Thread {
 
     //Main code to request chunk lists and chunks
     public void run() {
-    	try {
-			dos.writeUTF("Hi Seeder");
-		} catch (IOException e) {
-			System.out.println("Error writing text");
-		}
+    	//while () {
+	    	try {
+				dos.writeUTF("Hi Seeder, this is the hash:"+downloader.getTargetFile().hashCode());
+				dos.flush();
+	    	} catch (IOException e) {
+				System.out.println("Error writing text");
+			}
+    	//}
     }
 
 }

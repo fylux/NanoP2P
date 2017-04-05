@@ -205,7 +205,7 @@ public class PeerController implements PeerControllerIface {
 
 	@Override
 	public void downloadFileFromSeeds(InetSocketAddress[] seedList, String targetFileHash) {
-		Downloader d = new Downloader();
+		Downloader d = new Downloader(lookupQueryResult(targetFileHash)[0],chunkSize);
 		d.downloadFile(seedList);
 		System.out.println("my port: "+port);
 	}

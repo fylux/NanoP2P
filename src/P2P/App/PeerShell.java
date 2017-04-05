@@ -32,6 +32,7 @@ public class PeerShell implements PeerShellIface {
 	@Override
 	public void readCommand() {
 		do {
+		
 		args = null;
 		String[] words = in.nextLine().split(" ");
 		command = PeerCommands.stringToCommand(words[0]);
@@ -40,7 +41,6 @@ public class PeerShell implements PeerShellIface {
 			args = Arrays.copyOfRange(words,1, words.length);
 		
 		} while(!analyzeLine());
-		
 	}
 
 	private boolean analyzeLine() {
@@ -54,8 +54,29 @@ public class PeerShell implements PeerShellIface {
 				return args != null && args.length == 1;
 			}
 			
+			case PeerCommands.COM_QUERY : {
+				if (args!=null && !ArraytoString().
+					matches("(-n ([a-z]|[A-Z])+)?(( )?-lt [0-9]+([K]|[M]|[G])B)?(( )?-ge [0-9]+(([K]|[M]|[G])B))?"))
+				{
+						System.out.println("entro");
+						PeerCommands.printQueryOptionsHelp();
+						return false;
+				}
+				else return true;
+			}
 			default: return true;
 		}
 	}
 
+	
+	private String ArraytoString(){
+		
+		String s="";
+		for (String i : args) {
+			s+=i+" ";
+		}
+		s=s.substring(0,s.length()-1);
+		return s;
+	}
+	
 }

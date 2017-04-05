@@ -8,11 +8,17 @@ import P2P.util.FileInfo;
 public class Downloader implements DownloaderIface {
 
 	private InetSocketAddress[] seedList;
+	private FileInfo file;
+	private short chunkSize;
+	
+	public Downloader(FileInfo file, short chunkSize) {
+		this.file = file;
+		this.chunkSize = chunkSize;
+	}
 	
 	@Override
 	public FileInfo getTargetFile() {
-		// TODO Auto-generated method stub
-		return null;
+		return file;
 	}
 
 	@Override
