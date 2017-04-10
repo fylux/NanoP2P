@@ -22,10 +22,10 @@ public abstract class Message {
 	 */
 	protected static final int FIELD_INDEX_BYTES = 5;
 	
-	protected static final int TYPE_REQ_LIST = 1;
-	protected static final int TYPE_LIST = 2;
-	protected static final int TYPE_REQ_DATA = 3;
-	protected static final int TYPE_DATA = 4;
+	public static final int TYPE_REQ_LIST = 1;
+	public static final int TYPE_LIST = 2;
+	public static final int TYPE_REQ_DATA = 3;
+	public static final int TYPE_DATA = 4;
 	
 	private int type;
 	
@@ -50,9 +50,23 @@ public abstract class Message {
 		return m;
 	}
 	
-	
-	public static MessageFileChunk makeChunkList()	{
-		MessageFileChunk m = null;
-		return null;//new MessageFileChunk(type, nChunk, index)
+	public static MessageFileChunk makeChunkList(int nChunk,int ...index){
+		MessageFileChunk m = new MessageFileChunk(TYPE_LIST,nChunk,index);
+		return m;
 	}
+	
+	public static MessageFileChunk makeChunkList(byte[] buf){
+		MessageFileChunk m = new MessageFileChunk(buf);
+		return m;
+	}
+	
+	
+	public static MessageChunk makeReqData(){
+		return null;
+	}
+	
+	public static MessageData makeChunkData(){
+		return null;
+	}
+	
 }

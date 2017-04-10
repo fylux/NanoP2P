@@ -8,8 +8,13 @@ import java.io.RandomAccessFile;
 import java.net.Socket;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
+import java.util.concurrent.SynchronousQueue;
+
+import javax.swing.plaf.basic.BasicTreeUI.TreeHomeAction;
 
 import P2P.PeerPeer.Client.Downloader;
+import P2P.PeerPeer.Message.Message;
+import P2P.PeerPeer.Message.MessageFileChunk;
 import P2P.util.PeerDatabase;
 
 public class SeederThread extends Thread {
@@ -54,25 +59,52 @@ public class SeederThread extends Thread {
 		}
 	*/
     	byte[] buf=new byte[1000];
-    	
+    	Message m=null;
        	try {
     			dis.read(buf);
-    			/*
-    			ByteBuffer bbuf = ByteBuffer.wrap(buf);
-    			System.out.println((int)bbuf.get());
-    			*/
-    			System.out.println((int)buf[0]);
-    		} catch (IOException e) {
+    			m=processMessageReceived(buf);
+    			
+       		} catch (IOException e) {
     			// TODO Auto-generated catch block
     			e.printStackTrace();
     		}
         	
         	try {
-    			dos.writeUTF("Me ha llegado");
+    			dos.write(m.toByteArray());
+    			dos.flush();
     		} catch (IOException e) {
     			// TODO Auto-generated catch block
     			e.printStackTrace();
     		}	
     }
-
+    
+    private Message processMessageReceived(byte[] buf){
+  
+    	if (buf==null) throw new NullPointerException();
+  
+    	switch ((int)buf[0])
+    	{
+	    	case Message.TYPE_REQ_LIST :
+	    	{
+	    		//consultar si el fichero requerido
+	    		//esta siendo descargado
+	    		//en caso afirmativo, compartir las partes
+	    		
+	    		//TODO COMO sé que tengo el fichero que
+	    		//me piden?¿?¿?
+	    		
+	    		return Message.makeChunkList(-1,-1);
+	    	}
+	    	
+	    	case Message.TYPE_REQ_DATA :{		
+	    		System.out.println("send data");
+	    		break;
+	    	}
+	    	default: return null;
+    	}
+		return null;
+    }
 }
+    
+
+
