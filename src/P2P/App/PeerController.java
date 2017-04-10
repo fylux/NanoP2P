@@ -216,6 +216,9 @@ public class PeerController implements PeerControllerIface {
 		port = d.getSeederPort();
 		System.out.println("my port: "+port);
 		d.start();
+		//d.closeSocket();
 	}
+	
+	
 
 }

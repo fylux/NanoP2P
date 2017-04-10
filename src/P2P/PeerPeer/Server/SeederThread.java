@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.net.Socket;
 import java.net.SocketAddress;
+import java.nio.ByteBuffer;
 
 import P2P.PeerPeer.Client.Downloader;
 import P2P.util.PeerDatabase;
@@ -45,12 +46,33 @@ public class SeederThread extends Thread {
 
     //Método principal que coordina la recepción y envío de mensajes
     public void run() {
-    	System.out.println("Seed talking");
+    /*	System.out.println("Seed talking");
     	try {
 			System.out.println(dis.readUTF());
 		} catch (IOException e1) {
 			e1.printStackTrace();
 		}
+	*/
+    	byte[] buf=new byte[1000];
+    	
+       	try {
+    			dis.read(buf);
+    			/*
+    			ByteBuffer bbuf = ByteBuffer.wrap(buf);
+    			System.out.println((int)bbuf.get());
+    			*/
+    			System.out.println((int)buf[0]);
+    		} catch (IOException e) {
+    			// TODO Auto-generated catch block
+    			e.printStackTrace();
+    		}
+        	
+        	try {
+    			dos.writeUTF("Me ha llegado");
+    		} catch (IOException e) {
+    			// TODO Auto-generated catch block
+    			e.printStackTrace();
+    		}	
     }
 
 }

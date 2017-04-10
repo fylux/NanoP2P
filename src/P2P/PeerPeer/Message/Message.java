@@ -49,4 +49,10 @@ public abstract class Message {
 		m.fromByteArray(array);
 		return m;
 	}
+	
+	
+	public static MessageFileChunk makeChunkList()	{
+		MessageFileChunk m = null;
+		return null;//new MessageFileChunk(type, nChunk, index)
+	}
 }

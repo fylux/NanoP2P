@@ -5,8 +5,12 @@ import java.io.DataOutputStream;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.net.DatagramPacket;
 import java.net.InetSocketAddress;
 import java.net.Socket;
+
+import P2P.PeerPeer.Message.Message;
+import P2P.PeerPeer.Message.MessageHash;
 
 /**
  * @author rtitos
@@ -24,6 +28,7 @@ public class DownloaderThread  extends Thread {
 
 	public DownloaderThread(Downloader downloader, InetSocketAddress seed) {
 		this.downloader = downloader;
+		//new IllegalAccessError();
 		try {
 			downloadSocket = new Socket(seed.getAddress(),seed.getPort());
 			dos = new DataOutputStream(downloadSocket.getOutputStream());
@@ -49,13 +54,36 @@ public class DownloaderThread  extends Thread {
     //Main code to request chunk lists and chunks
     public void run() {
     	//while () {
-	    	try {
+	  /*  	try {
 				dos.writeUTF("Hi Seeder, this is the hash:"+downloader.getTargetFile().hashCode());
 				dos.flush();
 	    	} catch (IOException e) {
 				System.out.println("Error writing text");
-			}
+			} */
     	//}
+        	
+    	Message m = Message.makeReqList(downloader.getTargetFile().fileHash);
+ 
+    	byte[] buf = m.toByteArray();
+    	try {
+    		
+			dos.write(buf);
+			dos.flush();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+   
+    	try {
+			String s=dis.readUTF();
+			System.out.println("leida "+s);
+    		//dis.read(buf);
+    	} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+    	
+    	
     }
 
 }
