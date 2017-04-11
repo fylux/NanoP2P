@@ -5,8 +5,16 @@ import java.io.DataOutputStream;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.net.DatagramPacket;
 import java.net.InetSocketAddress;
 import java.net.Socket;
+
+import javax.xml.bind.DatatypeConverter;
+
+import P2P.PeerPeer.Message.Message;
+import P2P.PeerPeer.Message.MessageFileChunk;
+import P2P.PeerPeer.Message.MessageHash;
+import P2P.util.FileDigest;
 
 /**
  * @author rtitos
@@ -24,6 +32,7 @@ public class DownloaderThread  extends Thread {
 
 	public DownloaderThread(Downloader downloader, InetSocketAddress seed) {
 		this.downloader = downloader;
+		//new IllegalAccessError();
 		try {
 			downloadSocket = new Socket(seed.getAddress(),seed.getPort());
 			dos = new DataOutputStream(downloadSocket.getOutputStream());
@@ -48,14 +57,30 @@ public class DownloaderThread  extends Thread {
 
     //Main code to request chunk lists and chunks
     public void run() {
-    	//while () {
-	    	try {
-				dos.writeUTF("Hi Seeder, this is the hash:"+downloader.getTargetFile().hashCode());
-				dos.flush();
-	    	} catch (IOException e) {
-				System.out.println("Error writing text");
-			}
-    	//}
+        	
+    	Message m = Message.makeReqList(downloader.getTargetFile().fileHash);
+ 
+    	byte[] buf = m.toByteArray();    	
+    	try {
+			dos.write(buf);
+			dos.flush();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+   
+    	try {
+			dis.read(buf);
+    		System.out.println((int)buf[0]);	
+    		
+    		
+    	} catch (IOException e) {
+			e.printStackTrace();
+		}
     }
-
 }
+//el formato err_chunk no se procesa, solamente cerraremos 
+//el socket
+
+//¿como parto el archivo? ¿winrar?
+//¿con que criterio elijo las partes si tengo todas?
+//¿para compartir datos, debo leer una de las partes y pasarlas a bytes no?

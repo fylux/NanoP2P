@@ -77,5 +77,15 @@ public class Seeder implements Runnable {
     public int getSeederPort() {
     	return port;
     }
+    
+    public void closeSocket(){
+    	try {
+			serverSocket.close();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+    }
+    
 }
  

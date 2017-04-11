@@ -53,6 +53,4 @@ public class MessageHash extends Message{
 			return false;
 		}
 	}
-	
-	
 }

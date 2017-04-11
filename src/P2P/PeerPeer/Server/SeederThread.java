@@ -7,8 +7,14 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.net.Socket;
 import java.net.SocketAddress;
+import java.nio.ByteBuffer;
+import java.util.concurrent.SynchronousQueue;
+
+import javax.swing.plaf.basic.BasicTreeUI.TreeHomeAction;
 
 import P2P.PeerPeer.Client.Downloader;
+import P2P.PeerPeer.Message.Message;
+import P2P.PeerPeer.Message.MessageFileChunk;
 import P2P.util.PeerDatabase;
 
 public class SeederThread extends Thread {
@@ -45,12 +51,60 @@ public class SeederThread extends Thread {
 
     //M√©todo principal que coordina la recepci√≥n y env√≠o de mensajes
     public void run() {
-    	System.out.println("Seed talking");
+    /*	System.out.println("Seed talking");
     	try {
 			System.out.println(dis.readUTF());
 		} catch (IOException e1) {
 			e1.printStackTrace();
 		}
+	*/
+    	byte[] buf=new byte[1000];
+    	Message m=null;
+       	try {
+    			dis.read(buf);
+    			m=processMessageReceived(buf);
+    			
+       		} catch (IOException e) {
+    			// TODO Auto-generated catch block
+    			e.printStackTrace();
+    		}
+        	
+        	try {
+    			dos.write(m.toByteArray());
+    			dos.flush();
+    		} catch (IOException e) {
+    			// TODO Auto-generated catch block
+    			e.printStackTrace();
+    		}	
     }
-
+    
+    private Message processMessageReceived(byte[] buf){
+  
+    	if (buf==null) throw new NullPointerException();
+  
+    	switch ((int)buf[0])
+    	{
+	    	case Message.TYPE_REQ_LIST :
+	    	{
+	    		//consultar si el fichero requerido
+	    		//esta siendo descargado
+	    		//en caso afirmativo, compartir las partes
+	    		
+	    		//TODO COMO sÈ que tengo el fichero que
+	    		//me piden?ø?ø?
+	    		
+	    		return Message.makeChunkList(-1,-1);
+	    	}
+	    	
+	    	case Message.TYPE_REQ_DATA :{		
+	    		System.out.println("send data");
+	    		break;
+	    	}
+	    	default: return null;
+    	}
+		return null;
+    }
 }
+    
+
+
