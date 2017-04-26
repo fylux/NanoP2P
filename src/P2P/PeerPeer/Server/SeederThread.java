@@ -58,11 +58,10 @@ public class SeederThread extends Thread {
 			e1.printStackTrace();
 		}
 	*/
-    	byte[] buf=new byte[1000];
+    	
     	Message m=null;
        	try {
-    			dis.read(buf);
-    			m=processMessageReceived(buf);
+    			m=processMessageReceived(dis);
     			
        		} catch (IOException e) {
     			// TODO Auto-generated catch block
@@ -86,18 +85,16 @@ public class SeederThread extends Thread {
     	{
 	    	case Message.TYPE_REQ_LIST :
 	    	{
+	    		
 	    		//consultar si el fichero requerido
 	    		//esta siendo descargado
 	    		//en caso afirmativo, compartir las partes
 	    		
-	    		//TODO COMO sé que tengo el fichero que
-	    		//me piden?¿?¿?
-	    		
-	    		return Message.makeChunkList(-1,-1);
+	    		return Message.makeChunkList(buf);
 	    	}
 	    	
 	    	case Message.TYPE_REQ_DATA :{		
-	    		System.out.println("send data");
+	    		System.out.println("data received");
 	    		break;
 	    	}
 	    	default: return null;

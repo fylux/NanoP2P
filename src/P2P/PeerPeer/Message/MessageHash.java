@@ -1,5 +1,6 @@
 package P2P.PeerPeer.Message;
 
+import java.io.DataInputStream;
 import java.nio.ByteBuffer;
 
 import P2P.util.FileDigest;
@@ -34,7 +35,10 @@ public class MessageHash extends Message{
 	}
 
 	@Override
-	protected boolean fromByteArray(byte[] array) {
+	protected boolean fromByteArray(DataInputStream dis) {
+		byte[] array = new byte[Message.REQ_LIST];
+		dis.read(array);
+		
 		if (array.length < FIELD_TYPE_BYTES + FIELD_HASH_BYTES) {
 			System.err.println("Contenido del byte array "+array+" no es mensaje con formato Hash");
 			throw new RuntimeException("Byte array no contiene un mensaje con formato Hash");

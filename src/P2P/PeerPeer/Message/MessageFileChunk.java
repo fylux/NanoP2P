@@ -1,5 +1,6 @@
 package P2P.PeerPeer.Message;
 
+import java.io.DataInputStream;
 import java.nio.ByteBuffer;
 import java.util.LinkedList;
 import java.util.List;
@@ -42,38 +43,48 @@ public class MessageFileChunk extends Message {
 	
 	@Override
 	public byte[] toByteArray() {
-		
-		int byteBufferLength = FIELD_TYPE_BYTES + FIELD_N_CHUNKS_BYTES + index.size()*FIELD_INDEX_BYTES;
+		//TODO nChunk = -1
+		int byteBufferLength = FIELD_TYPE_BYTES + FIELD_N_CHUNKS_BYTES + nChunk*FIELD_INDEX_BYTES;
 
 		ByteBuffer buf = ByteBuffer.allocate(byteBufferLength);
 
 		buf.put((byte)this.getType());
-		byte[] nchunk = new byte[FIELD_N_CHUNKS_BYTES];
+		byte[] field_n_chunk = ByteBuffer.allocate(FIELD_N_CHUNKS_BYTES).putInt(nChunk).array();
 		
-		//¿como pasas ese número a byte?
-		//¿y si ocupa más de un byte?
-		nchunk[0]=(byte)this.nChunk;
-		buf.put(nchunk);
+		buf.put(field_n_chunk);
+		
 		for (Integer i : index) {
-			buf.put((byte)i.intValue());
+			byte[] chunk_index = ByteBuffer.allocate(FIELD_INDEX_BYTES).putInt(i).array();
+			buf.put(chunk_index);
 		}
 
 		return buf.array();
 	}
 
-	@Override
-	protected boolean fromByteArray(byte[] array) {
-		if (array.length < FIELD_TYPE_BYTES + FIELD_N_CHUNKS_BYTES + FIELD_INDEX_BYTES) {
+
+	protected boolean fromByteArray(DataInputStream dis) {
+		if (dis.read() != (byte)TYPE_LIST) {
+			System.err.println("Error: invalid FileList message");
+		}
+		byte[] nChunk_bytes = new byte[FIELD_N_CHUNKS_BYTES];
+		dis.read(nChunk_bytes);
+		long aux = ByteBuffer.wrap(nChunk_bytes).getLong();
+		if (aux == -1) {
+			
+		}
+		else {
+			nChunk = (int) aux;
+		}
+		/*if (array.length < FIELD_TYPE_BYTES + FIELD_N_CHUNKS_BYTES + FIELD_INDEX_BYTES) {
 			System.err.println("Contenido del byte array "+array+" no es mensaje con formato FileChunk");
 			throw new RuntimeException("Byte array no contiene un mensaje con formato FileChunk");
-		}
+		}*/
 		ByteBuffer buf = ByteBuffer.wrap(array);
 		try {
 			setType((int)buf.get());
 	
-			byte[] nChunkArray = new byte[FIELD_N_CHUNKS_BYTES-1];
+			byte[] nChunkArray = new byte[FIELD_N_CHUNKS_BYTES];
 			buf.get(nChunkArray, 0, nChunkArray.length);
-			System.out.println("dsfdsafsa");
 			
 			byte[] nIndexArray;
 			for(int i=0;i<nChunk;i++){

@@ -1,5 +1,7 @@
 package P2P.PeerPeer.Message;
 
+import java.io.DataInputStream;
+
 public abstract class Message {
 	
 	/**
@@ -20,7 +22,9 @@ public abstract class Message {
 	/**
 	 * Size of "index" field: byte (4 bytes)
 	 */
-	protected static final int FIELD_INDEX_BYTES = 5;
+	protected static final int FIELD_INDEX_BYTES = 4;
+	
+	public static final int REQ_LIST = FIELD_TYPE_BYTES + FIELD_HASH_BYTES;
 	
 	public static final int TYPE_REQ_LIST = 1;
 	public static final int TYPE_LIST = 2;
@@ -30,7 +34,8 @@ public abstract class Message {
 	private int type;
 	
 	public abstract byte[] toByteArray();
-	protected abstract boolean fromByteArray(byte[] array);
+	//protected abstract boolean fromByteArray(byte[] array);
+	protected abstract boolean fromByteArray(DataInputStream dis);
 	
 	public int getType() {
 		return type;

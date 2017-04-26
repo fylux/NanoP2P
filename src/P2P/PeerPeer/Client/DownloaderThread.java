@@ -70,6 +70,8 @@ public class DownloaderThread  extends Thread {
    
     	try {
 			dis.read(buf);
+			//processar mensaje recibido
+			//case segun mensaje que me llegue respondo
     		System.out.println((int)buf[0]);	
     		
     		
