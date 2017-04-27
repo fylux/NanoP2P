@@ -12,7 +12,8 @@ import java.net.Socket;
 import javax.xml.bind.DatatypeConverter;
 
 import P2P.PeerPeer.Message.Message;
-import P2P.PeerPeer.Message.MessageFileChunk;
+import P2P.PeerPeer.Message.MessageChunk;
+import P2P.PeerPeer.Message.MessageChunkList;
 import P2P.PeerPeer.Message.MessageHash;
 import P2P.util.FileDigest;
 
@@ -58,31 +59,23 @@ public class DownloaderThread  extends Thread {
     //Main code to request chunk lists and chunks
     public void run() {
         	
-    	Message m = Message.makeReqList(downloader.getTargetFile().fileHash);
- 
-    	byte[] buf = m.toByteArray();    	
+    	MessageHash reqList = Message.makeReqList(downloader.getTargetFile().fileHash);
     	try {
-			dos.write(buf);
+			dos.write(reqList.toByteArray());
 			dos.flush();
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-   
+
+    	MessageChunkList chunkList = Message.makeChunkList(dis);
+    	
+    	MessageChunk reqChunk = Message.makeReqData(1);
+    	
     	try {
-			dis.read(buf);
-			//processar mensaje recibido
-			//case segun mensaje que me llegue respondo
-    		System.out.println((int)buf[0]);	
-    		
-    		
-    	} catch (IOException e) {
+			dos.write(reqChunk.toByteArray());
+			dos.flush();
+		} catch (IOException e) {
 			e.printStackTrace();
 		}
     }
 }
-//el formato err_chunk no se procesa, solamente cerraremos 
-//el socket
-
-//¿como parto el archivo? ¿winrar?
-//¿con que criterio elijo las partes si tengo todas?
-//¿para compartir datos, debo leer una de las partes y pasarlas a bytes no?

@@ -17,14 +17,18 @@ public abstract class Message {
 	/**
 	 * Size of "n_chunks" field: byte (5 bytes)
 	 */
-	protected static final int FIELD_N_CHUNKS_BYTES = 5;
+	protected static final int FIELD_N_CHUNKS_BYTES = 4;
 	
 	/**
 	 * Size of "index" field: byte (4 bytes)
 	 */
 	protected static final int FIELD_INDEX_BYTES = 4;
 	
-	public static final int REQ_LIST = FIELD_TYPE_BYTES + FIELD_HASH_BYTES;
+	public static final int SIZE_REQ_LIST = FIELD_TYPE_BYTES + FIELD_HASH_BYTES;
+	public static final int SIZE_REQ_DATA = FIELD_TYPE_BYTES + FIELD_INDEX_BYTES;
+	
+	public static final int MAX_SIZE_LIST = 
+			FIELD_TYPE_BYTES + FIELD_N_CHUNKS_BYTES + FIELD_INDEX_BYTES*2^31;
 	
 	public static final int TYPE_REQ_LIST = 1;
 	public static final int TYPE_LIST = 2;
@@ -34,8 +38,6 @@ public abstract class Message {
 	private int type;
 	
 	public abstract byte[] toByteArray();
-	//protected abstract boolean fromByteArray(byte[] array);
-	protected abstract boolean fromByteArray(DataInputStream dis);
 	
 	public int getType() {
 		return type;
@@ -46,28 +48,28 @@ public abstract class Message {
 	}
 	
 	public static MessageHash makeReqList(String hash) {
-		return new MessageHash(TYPE_REQ_LIST,hash);
+		return new MessageHash(hash);
 	}
 	
 	public static MessageHash makeReqList(byte[] array) {
-		MessageHash m = new MessageHash(TYPE_REQ_LIST,null);
-		m.fromByteArray(array);
-		return m;
+		return new MessageHash(array);
 	}
 	
-	public static MessageFileChunk makeChunkList(int nChunk,int ...index){
-		MessageFileChunk m = new MessageFileChunk(TYPE_LIST,nChunk,index);
-		return m;
+	public static MessageChunkList makeChunkList(int nChunk,int ...index){
+		return new MessageChunkList(nChunk,index);
 	}
 	
-	public static MessageFileChunk makeChunkList(byte[] buf){
-		MessageFileChunk m = new MessageFileChunk(buf);
-		return m;
+	public static MessageChunkList makeChunkList(DataInputStream dis){
+		return new MessageChunkList(dis);
 	}
 	
 	
-	public static MessageChunk makeReqData(){
-		return null;
+	public static MessageChunk makeReqData(int index){
+		return new MessageChunk(index);
+	}
+	
+	public static MessageChunk makeReqData(byte[] array){
+		return new MessageChunk(array);
 	}
 	
 	public static MessageData makeChunkData(){

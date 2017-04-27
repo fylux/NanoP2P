@@ -14,7 +14,9 @@ import javax.swing.plaf.basic.BasicTreeUI.TreeHomeAction;
 
 import P2P.PeerPeer.Client.Downloader;
 import P2P.PeerPeer.Message.Message;
-import P2P.PeerPeer.Message.MessageFileChunk;
+import P2P.PeerPeer.Message.MessageChunk;
+import P2P.PeerPeer.Message.MessageChunkList;
+import P2P.PeerPeer.Message.MessageHash;
 import P2P.util.PeerDatabase;
 
 public class SeederThread extends Thread {
@@ -23,6 +25,7 @@ public class SeederThread extends Thread {
 	protected DataOutputStream dos;
 	protected DataInputStream dis;
 	private short chunkSize;
+	private String fileHash;
 	/* Global buffer for performance reasons */
     private byte[] chunkDataBuf;
 
@@ -51,57 +54,35 @@ public class SeederThread extends Thread {
 
     //Método principal que coordina la recepción y envío de mensajes
     public void run() {
-    /*	System.out.println("Seed talking");
+    	
+    	byte[] buf_list = new byte[Message.SIZE_REQ_LIST];
     	try {
-			System.out.println(dis.readUTF());
+			dis.read(buf_list);
 		} catch (IOException e1) {
 			e1.printStackTrace();
 		}
-	*/
     	
-    	Message m=null;
-       	try {
-    			m=processMessageReceived(dis);
-    			
-       		} catch (IOException e) {
-    			// TODO Auto-generated catch block
-    			e.printStackTrace();
-    		}
-        	
-        	try {
-    			dos.write(m.toByteArray());
-    			dos.flush();
-    		} catch (IOException e) {
-    			// TODO Auto-generated catch block
-    			e.printStackTrace();
-    		}	
-    }
-    
-    private Message processMessageReceived(byte[] buf){
-  
-    	if (buf==null) throw new NullPointerException();
-  
-    	switch ((int)buf[0])
-    	{
-	    	case Message.TYPE_REQ_LIST :
-	    	{
-	    		
-	    		//consultar si el fichero requerido
-	    		//esta siendo descargado
-	    		//en caso afirmativo, compartir las partes
-	    		
-	    		return Message.makeChunkList(buf);
-	    	}
-	    	
-	    	case Message.TYPE_REQ_DATA :{		
-	    		System.out.println("data received");
-	    		break;
-	    	}
-	    	default: return null;
+    	MessageHash fileRequested = Message.makeReqList(buf_list);
+    	fileHash = fileRequested.getHash();
+ 	    MessageChunkList chunkList=Message.makeChunkList(5,1,2,3,4,5);
+    	
+        try {
+    		dos.write(chunkList.toByteArray());
+    		dos.flush();
+    	} catch (IOException e) {
+    		e.printStackTrace();
     	}
-		return null;
+        
+        byte[] buf_chunk = new byte[Message.SIZE_REQ_DATA];
+    	try {
+			dis.read(buf_chunk);
+		} catch (IOException e1) {
+			e1.printStackTrace();
+		}
+    	MessageChunk requestedChunk = Message.makeReqData(buf_chunk);
+    	int index = requestedChunk.getIndex();
+
     }
+ 
 }
     
-
-

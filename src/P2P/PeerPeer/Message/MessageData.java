@@ -1,41 +1,53 @@
 package P2P.PeerPeer.Message;
 
+import java.io.DataInputStream;
+import java.io.IOException;
 import java.lang.reflect.Array;
+import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 
+import P2P.App.PeerController;
+import P2P.util.FileDigest;
+
 public class MessageData extends Message {
 
-	private List<Integer> index;
 	private byte[] data;
-	
-	public List<Integer> getIndex() {
-		return index;
-	}
 
 	public byte[] getData() {
 		return data;
 	}
 
-	public MessageData(int type,byte[] data,int...index) {
-		this.index=new LinkedList<Integer>();
-		setType(type);
-		this.data=Arrays.copyOf(data, data.length);
-		for (Integer i : index) {
-			this.index.add(i);
-		}
+	public MessageData(byte[] array) {
+		fromByteArray(array);
 	}
 	
 	@Override
 	public byte[] toByteArray() {
-		// TODO Auto-generated method stub
-		return null;
+		ByteBuffer buf = ByteBuffer.allocate(FIELD_TYPE_BYTES+data.length);
+		
+		buf.put((byte)getType());
+		buf.put(data);
+		
+		return buf.array();
 	}
 
-	@Override
 	protected boolean fromByteArray(byte[] array) {
-		// TODO Auto-generated method stub
-		return false;
+		if ( (int)array[0] != TYPE_DATA) {
+			throw new RuntimeException("Invalid DATA message");
+		}
+		
+		ByteBuffer buf = ByteBuffer.wrap(array);
+		try {
+			setType((int)buf.get());
+			data = new byte[array.length-1];
+			buf.get(data);
+			
+			return true;
+		} catch (RuntimeException e) {
+			e.printStackTrace();
+			return false;
+		}
 	}
 }
