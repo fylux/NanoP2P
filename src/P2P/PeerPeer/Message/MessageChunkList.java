@@ -14,7 +14,7 @@ public class MessageChunkList extends Message {
 
 	private int nChunk;
 	private boolean all;
-	private List<Integer> index;
+	private LinkedList<Integer> index;
 	
 	
 	public MessageChunkList(DataInputStream dis) {
@@ -36,7 +36,7 @@ public class MessageChunkList extends Message {
 		return nChunk;
 	}
 
-	public List<Integer> getIndex() {
+	public LinkedList<Integer> getIndex() {
 		return index;
 	}
 
@@ -58,7 +58,7 @@ public class MessageChunkList extends Message {
 		buf.put((byte)this.getType());
 		buf.putInt(nChunk);
 		
-		for (Integer i : index) {
+		for (Integer i : index){
 			buf.putInt(i);
 		}
 
@@ -96,8 +96,6 @@ public class MessageChunkList extends Message {
 				return false;
 			}
 		}
-		
 		return true;
-		
 	}
 }

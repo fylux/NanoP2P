@@ -15,7 +15,7 @@ public abstract class Message {
 	protected static final int FIELD_HASH_BYTES = 20;
 	
 	/**
-	 * Size of "n_chunks" field: byte (5 bytes)
+	 * Size of "n_chunks" field: byte (4 bytes)
 	 */
 	protected static final int FIELD_N_CHUNKS_BYTES = 4;
 	
@@ -63,7 +63,6 @@ public abstract class Message {
 		return new MessageChunkList(dis);
 	}
 	
-	
 	public static MessageChunk makeReqData(int index){
 		return new MessageChunk(index);
 	}
@@ -72,8 +71,7 @@ public abstract class Message {
 		return new MessageChunk(array);
 	}
 	
-	public static MessageData makeChunkData(){
-		return null;
-	}
-	
+	public static MessageData makeChunkData(byte[] dataArray,int index){
+		return new MessageData(dataArray,index);
+	}	
 }
