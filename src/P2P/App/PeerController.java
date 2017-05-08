@@ -166,7 +166,8 @@ public class PeerController implements PeerControllerIface {
 			break;
 		}
 		case Message.OP_REMOVE_SEED_ACK: {
-			System.out.println(response.getOpCodeString());
+			System.out.println("me voy: "+response.getOpCodeString());
+			//enviar un mensaje de cerrar socket al tracker
 			break;
 		}
 		

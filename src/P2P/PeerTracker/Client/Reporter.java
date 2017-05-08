@@ -41,11 +41,15 @@ public class Reporter implements ReporterIface {
 	public void end() {
 		// Close datagram socket with tracker
 		peerTrackerSocket.close();
+		
 	}
 
 	@Override
 	public boolean sendMessageToTracker(DatagramSocket socket, Message request, InetSocketAddress trackerAddress) {
-		byte[] buf = request.toByteArray();
+		
+		 byte[] buf = request.toByteArray();
+		
+		
 		DatagramPacket pckt = new DatagramPacket(buf, buf.length, addr);
 		try {
 			socket.send(pckt);

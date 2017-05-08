@@ -25,11 +25,18 @@ public class MessageChunkList extends Message {
 	public MessageChunkList(int nChunk,int ... index) {
 		this.index=new LinkedList<Integer>();
 		this.nChunk=nChunk;
-		all = false;
+		all = nChunk == -1;
 		setType(TYPE_LIST);
+		
 		for (int i : index) {
 			this.index.add(i);
 		}
+		
+		
+	}
+	
+	public boolean isAll(){
+		return all;
 	}
 	
 	public int getNChunk() {
@@ -58,6 +65,7 @@ public class MessageChunkList extends Message {
 		buf.put((byte)this.getType());
 		buf.putInt(nChunk);
 		
+		//si all está activado index será tendrá length cero
 		for (Integer i : index){
 			buf.putInt(i);
 		}

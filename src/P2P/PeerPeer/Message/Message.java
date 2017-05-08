@@ -73,5 +73,10 @@ public abstract class Message {
 	
 	public static MessageData makeChunkData(byte[] dataArray,int index){
 		return new MessageData(dataArray,index);
-	}	
+	}
+	
+
+	public static MessageData makeChunkData(DataInputStream dis,int chunkSize){
+		return new MessageData(dis,chunkSize);
+	}
 }

@@ -3,6 +3,8 @@ package P2P.PeerPeer.Client;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.EOFException;
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.net.DatagramPacket;
@@ -12,6 +14,7 @@ import java.util.LinkedList;
 
 import javax.xml.bind.DatatypeConverter;
 
+import P2P.App.Peer;
 import P2P.PeerPeer.Message.Message;
 import P2P.PeerPeer.Message.MessageChunk;
 import P2P.PeerPeer.Message.MessageChunkList;
@@ -32,7 +35,7 @@ public class DownloaderThread  extends Thread {
 	protected DataOutputStream dos;
 	protected DataInputStream dis;
 	private int numChunksDownloaded;
-	
+	int pos=0;
 	private LinkedList<Integer> chunkList;
 
 	public DownloaderThread(Downloader downloader, InetSocketAddress seed) {
@@ -64,7 +67,7 @@ public class DownloaderThread  extends Thread {
 	private void receiveAndProcessChunkList() {
     	chunkList = Message.makeChunkList(dis).getIndex();
     }
-		
+	
 	//Number of chunks already downloaded by this thread
     public int getNumChunksDownloaded() {
     	return numChunksDownloaded;
@@ -73,60 +76,119 @@ public class DownloaderThread  extends Thread {
     //Main code to request chunk lists and chunks
     public void run() {
     	int bookedChunk = -1;
-    	
     	requestChunkList();
     	receiveAndProcessChunkList();
     	bookedChunk = downloader.bookNextChunk(chunkList);
+    	System.out.println("book: "+ bookedChunk);
+    	while (!downloader.isDownloadComplete()){
     		
-    	while (!downloader.isDownloadComplete()) {
     		if (bookedChunk == -1) {
     			//Ask peer repeteadly and then ask downloader
+    			while(bookedChunk!=-1){
+    				requestChunkList();
+    				receiveAndProcessChunkList();
+    				bookedChunk = downloader.bookNextChunk(chunkList);
+    			}
+    			//no rompo aquí porque puede ser que por otro thread
+    			//se esten descargando los trozos restantes
+    			//y me devuelva un -2
     		}
     		else if (bookedChunk == -2) {
     			//Ask downloader repeteadly if is complete, if so break
+    			while(downloader.isDownloadComplete());
+    			break;
     		}
-    		
-    		//Req data bookedChunk
-    		//Write bookedChunk
-    		//bookedChunk()
+    		//si bookedChunk es un trozo valido..    			
+    		MessageChunk reqChunk;
+        	MessageData dataChunk;
+        	//Req data bookedChunk
+        	reqChunk= Message.makeReqData(bookedChunk);
+        
+        	try {
+    			dos.write(reqChunk.toByteArray());
+    			dos.flush();
+    		} catch (IOException e) {
+    			e.printStackTrace();
+    		}
+        	
+        	//debe esperar el chunk pedido
+        	
+        	int chunkSize=downloader.getChunkSize();
+        	if (reqChunk.getIndex()==downloader.getTotalChunks()){
+        		chunkSize=downloader.getSizeLastChunk();
+        		writeData(Message.makeChunkData(dis,chunkSize));	
+        		}
+        	else{	
+        			writeData(Message.makeChunkData(dis,chunkSize));
+        			requestChunkList();
+    				receiveAndProcessChunkList();
+        		} 
+        	
+        		
+        	
+    		bookedChunk = downloader.bookNextChunk(chunkList);
     	}
     	
-    	MessageChunk reqChunk;
-    	MessageData dataChunk;
-    	//calcular los chunk totales del fichero
-    	
-    	//while haya chunk sin descargar
-    	reqChunk= Message.makeReqData(processIndex());
-    	
     	try {
-			dos.write(reqChunk.toByteArray());
-			dos.flush();
+			downloadSocket.close();
 		} catch (IOException e) {
+			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
     	
-    	//dataChunk=new MessageData(dis);
     	
+    }  
+
+    private void writeData(MessageData message){
+    
+    	String path = Peer.db.getSharedFolderPath() + "/" + downloader.getTargetFile().fileName;
+    		
+    	byte[] data = message.getData();
+    	int index=message.getIndex();
     	
-    	//actualizar chunk pendientes de descarga
-    	//end while
-    	
+    	    	
+    	int parts=downloader.getTotalChunks();
+		int lastSize=downloader.getSizeLastChunk();
+		
+		int dataSize=downloader.getChunkSize();
+		//si tengo la ultima parte, descargo solo lo que pese
+		if (index==parts)
+		{
+			dataSize=lastSize;
+		}
+		 	
+       	File f2 = new File(path);
+		try {
+			if (!f2.exists())
+				f2.createNewFile();
+			RandomAccessFile rfo;
+			rfo = new RandomAccessFile(f2,"rw");
+			rfo.seek(pos);
+			rfo.write(data);	
+			rfo.close();
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		} catch (IOException e){
+			e.printStackTrace();
+		}		
+		
+		printByteArray(data);
+		pos+=dataSize;
     }
     
-    
-    
-    public int processIndex(){
-    //TODO calcular tamaño archivo, elegir index aleatorio
-    	
-    	
-    	return 1;
+    private void printByteArray(byte[] data){
+    	String file_string = "";
+
+		for(int i = 0; i < data.length; i++)
+		   {
+				file_string += (char)data[i];
+		   }
+
+		System.out.println("cadena: " + file_string);
+
     }
     
 }
-
-
 /**
--hay que descargar la lista de trozos enteras no solo la 1
--faltaría recibir los datos el trozo pedido
-
+-no consigo hacer que la ejecución se detenga
 **/

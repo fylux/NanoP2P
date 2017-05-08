@@ -25,8 +25,10 @@ public class Downloader implements DownloaderIface {
 		this.file = file;
 		this.chunkSize = chunkSize;
 		this.chunkState = new int[getTotalChunks()];
+		System.out.println("l "+chunkState.length);
 		for (int i = 0; i < chunkState.length ; i++)
 			chunkState[i] = NO_DOWNLOADED;
+	
 	}
 	
 	@Override
@@ -41,7 +43,11 @@ public class Downloader implements DownloaderIface {
 
 	@Override
 	public int getTotalChunks() {
-		return (int)Math.ceil(file.fileSize/(long)chunkSize);
+		int result=(int)Math.ceil(Float.valueOf(file.fileSize)/Float.valueOf(chunkSize));
+		if(result==0)
+			return 1;
+		
+	return result;
 	}
 	
 	public int getSizeLastChunk() {
@@ -66,12 +72,25 @@ public class Downloader implements DownloaderIface {
 	}
 
 	public int bookNextChunk(List<Integer> list) {
-		for (int i : list)
+		
+	if (list.isEmpty()){
+		for (int i=0;i<chunkState.length;i++)
 			if (chunkState[i] == NO_DOWNLOADED) {
 				chunkState[i] = DOWNLOADING;
-				return i;
+				return i+1;
 			}
-		
+	}
+	else{	
+			for (int i : list)
+				if (chunkState[i] == NO_DOWNLOADED) {
+					chunkState[i] = DOWNLOADING;
+					return i+1;
+				}
+		}
+		//si los elementos de la lista estan
+		//en proceso de descarga o descargados
+		//recorro el array para ver si falta por descargar
+		//algun trozo
 		for (int i : chunkState)
 			if (i == NO_DOWNLOADED)
 				return -1;	//The peer doesn't have a chunk that is needed
@@ -126,5 +145,4 @@ public class Downloader implements DownloaderIface {
 	public short getChunkSize() {
 		return chunkSize;
 	}
-
 }

@@ -18,7 +18,6 @@ public class MessageData extends Message {
 
 	private int index;
 	private byte[] data;
-	
 
 	public byte[] getData() {
 		return data;
@@ -34,10 +33,9 @@ public class MessageData extends Message {
 		fromByteArray(dataArray);
 	}
 	
-	public MessageData(DataInputStream dis){
-		fromStream(dis);
+	public MessageData(DataInputStream dis,int chunkSize){
+		fromStream(dis,chunkSize);
 	}
-	
 	
 	@Override
 	public byte[] toByteArray() {
@@ -63,7 +61,7 @@ public class MessageData extends Message {
 		}
 	}
 	
-	protected boolean fromStream(DataInputStream dis) {
+	protected boolean fromStream(DataInputStream dis,int chunkSize) {
 		try {
 			if (dis.read() != (byte)TYPE_DATA) {
 				System.err.println("Error: invalid FileData message");
@@ -82,33 +80,14 @@ public class MessageData extends Message {
 		index = ByteBuffer.wrap(index_bytes).getInt();
 		
 		//TODO como calcular el tamaño de data
-		int data_size=23;
-		int bytesLeidos=0;
-		data = new byte[data_size];
+		data = new byte[chunkSize];
 			try {
-				bytesLeidos=dis.read(data);
+				dis.readFully(data);
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
-		System.out.println("bytes leidos: " + bytesLeidos);
-		//writeFile(data,bytesLeidos); //funcion de prueba
 		return true;
 	}
 
-//función de prueba..
-	/*
-	private void writeFile(byte[] data,int bytesLeidos){
-		File f2 = new File("C:/Users/daniel/Desktop/share/P1/funciona.txt");
-		FileOutputStream fos;
-		try {
-			fos = new FileOutputStream(f2);
-			fos.write(data);
-			fos.close();
-		} catch (FileNotFoundException e) {
-			e.printStackTrace();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();	
-		}
-	}	*/
+
 }
