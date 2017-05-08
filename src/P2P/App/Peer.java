@@ -25,7 +25,7 @@ public class Peer {
 		
 		// Create commander object that will accept and process user commands
 		PeerController commander = new PeerController(client);
-
+		
 		// Begin conversation with tracker by getting configuration (chunk size)
 		commander.getConfigFromTracker();
 		

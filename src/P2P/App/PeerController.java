@@ -166,7 +166,8 @@ public class PeerController implements PeerControllerIface {
 			break;
 		}
 		case Message.OP_REMOVE_SEED_ACK: {
-			System.out.println(response.getOpCodeString());
+			System.out.println("me voy: "+response.getOpCodeString());
+			//enviar un mensaje de cerrar socket al tracker
 			break;
 		}
 		
@@ -207,8 +208,8 @@ public class PeerController implements PeerControllerIface {
 	public void downloadFileFromSeeds(InetSocketAddress[] seedList, String targetFileHash) {
 		Downloader d = new Downloader(lookupQueryResult(targetFileHash)[0],chunkSize);
 		d.downloadFile(seedList);
-		System.out.println("my port: "+port);
-		
+		//System.out.println("my port: "+port);
+		//el array de lookupqueryResult solo puede contener un fileInfo 
 	}
 
 	public void listenSeeder() {
