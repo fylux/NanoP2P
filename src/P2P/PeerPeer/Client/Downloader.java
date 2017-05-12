@@ -1,12 +1,15 @@
 package P2P.PeerPeer.Client;
 
 import java.net.InetSocketAddress;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 
 import P2P.App.Peer;
 import P2P.App.PeerCommands;
 import P2P.App.PeerController;
+import P2P.PeerPeer.Message.MessageChunkList;
 import P2P.util.FileDigest;
 import P2P.util.FileInfo;
 
@@ -22,8 +25,11 @@ public class Downloader implements DownloaderIface {
 	private DownloaderThread[] threads;
 	private int nChunksDownloaded = 0;
 	private int totalChunks;
+	private int sizeLastChunk;
 	
 	private PeerController peerController;
+	private HashMap<InetSocketAddress,Integer> statsChunks;
+	private HashMap<InetSocketAddress,Long> statsTime;
 	
 	private static final int DOWNLOADED = 1;
 	private static final int DOWNLOADING = 0;
@@ -40,6 +46,13 @@ public class Downloader implements DownloaderIface {
 		this.chunkSize = chunkSize;
 		this.chunkState = new int[getTotalChunks()];
 		this.init_time = System.nanoTime();
+		this.statsChunks = new HashMap<InetSocketAddress,Integer>();
+		this.statsTime = new HashMap<InetSocketAddress,Long>();
+		int size = (int) (file.fileSize % (long)chunkSize);
+		if (size == 0)
+			this.sizeLastChunk = chunkSize;
+		else
+			this.sizeLastChunk = size;
 		
 		
 		for (int i = 0; i < chunkState.length ; i++)
@@ -63,11 +76,7 @@ public class Downloader implements DownloaderIface {
 	}
 	
 	public int getSizeLastChunk() {
-		int size = (int) (file.fileSize % (long)chunkSize);
-		if (size == 0)
-			return chunkSize;
-		else
-			return size;
+		return sizeLastChunk;
 	}
 
 	@Override
@@ -79,13 +88,13 @@ public class Downloader implements DownloaderIface {
 		}
 
 		joinDownloaderThreads();
-		return false;
+		end();
+		return isDownloadComplete();
 	}
 
-	public synchronized int bookNextChunk(List<Integer> list) {
-	
-		//TODO si la lista esta vacia puede ser que lo tenga todo o no tenga nada
-		if (list.isEmpty()){
+	public synchronized int bookNextChunk(MessageChunkList message) {
+		List<Integer> list = message.getIndex();
+		if (message.isAll()){
 			for (int i=0;i<chunkState.length;i++)
 				if (chunkState[i] == NO_DOWNLOADED) {
 					chunkState[i] = DOWNLOADING;
@@ -119,10 +128,7 @@ public class Downloader implements DownloaderIface {
 			} 
 			nChunksDownloaded++;
 			chunkState[chunk-1] = DOWNLOADED;
-			System.out.println("Downloading: "+nChunksDownloaded*100/getTotalChunks()+"%, chunk: "+chunk+" "+achieved);
-		
-			if (isDownloadComplete())
-				end();
+			System.out.println("Downloading: "+nChunksDownloaded*100/getTotalChunks()+"%, chunk: "+chunk);
 		}
 		else
 			chunkState[chunk] = NO_DOWNLOADED;
@@ -131,9 +137,10 @@ public class Downloader implements DownloaderIface {
 	@Override
 	public synchronized int[] getChunksDownloadedFromSeeders() {
 		LinkedList<Integer> chunks = new LinkedList<Integer>();
-		for (int i : chunkState)
-			if (i == DOWNLOADED)
+		for (int i = 0; i < chunkState.length; i++)
+			if (chunkState[i] == DOWNLOADED) {
 				chunks.add(i);
+			}
 		
 		int[] array = new int[chunks.size()];
 		for (int i = 0; i < chunks.size(); i++)
@@ -145,10 +152,6 @@ public class Downloader implements DownloaderIface {
 	@Override
 	public synchronized boolean isDownloadComplete() {
 		return nChunksDownloaded == getTotalChunks();
-		/*for (int i : chunkState)
-			if (i != DOWNLOADED)
-				return false;*/
-		
 	}
 
 	@Override
@@ -178,11 +181,26 @@ public class Downloader implements DownloaderIface {
 		if (!computedHash.equals(file.fileHash))
 			System.err.println("File: "+file.fileName+" is corrupted");
 		
-		
+		System.out.println("Chunks: "+getTotalChunks());
 		long elapsed_time =  System.nanoTime() - init_time;
 		float seconds = (float)elapsed_time/(float)1000000000;
 		System.out.println("Time: "+seconds+"s");
 		float speed = (float)file.fileSize/(float)1024.0/seconds;
-		System.out.printf("Speed: %.2fkb/s", speed);
+		System.out.printf("Speed: %.2fkb/s\n", speed);
+
+		
+		Set<InetSocketAddress> keys = statsChunks.keySet();
+		for (InetSocketAddress seed : keys) {
+			elapsed_time = statsTime.get(seed)-init_time;
+			System.out.println("Seed "+seed.getHostName()+":"+seed.getPort()+
+					" Chunks:"+statsChunks.get(seed)+
+					", Time: "+(float)elapsed_time/(float)1000000000+"s");
+		}
+	}
+
+	public synchronized void updateStats(InetSocketAddress seed, int numChunksDownloaded) {
+		statsChunks.put(seed, numChunksDownloaded);
+		statsTime.put(seed, System.nanoTime());
+		
 	}
 }

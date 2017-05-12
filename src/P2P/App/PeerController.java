@@ -78,40 +78,40 @@ public class PeerController implements PeerControllerIface {
 	@Override
 	public void processCurrentCommand() {
 		switch (currentCommand) {
-		case PeerCommands.COM_CONFIG: {
-			Message m = createMessageFromCurrentCommand();
-			processMessageFromTracker(reporter.conversationWithTracker(m));
-			break;
-		}
-		case PeerCommands.COM_ADDSEED: {
-			Message m = createMessageFromCurrentCommand();
-			processMessageFromTracker(reporter.conversationWithTracker(m));
-			break;
-		}
-		case PeerCommands.COM_QUERY: {
-			Message m = createMessageFromCurrentCommand();
-			processMessageFromTracker(reporter.conversationWithTracker(m));
-			break;
-		}
-		case PeerCommands.COM_DOWNLOAD: {
-			Message m = createMessageFromCurrentCommand();
-			if (m != null)
+			case PeerCommands.COM_CONFIG: {
+				Message m = createMessageFromCurrentCommand();
 				processMessageFromTracker(reporter.conversationWithTracker(m));
-			break;
-		}
-		case PeerCommands.COM_SHOW: {
-			FileInfo[] fileList = Peer.db.getLocalSharedFiles();
-			for (FileInfo f: fileList)
-				System.out.println(f.fileName);
-			break;
-		}
-		case PeerCommands.COM_QUIT: {
-			shell.close();
-			Message m = createMessageFromCurrentCommand();
-			processMessageFromTracker(reporter.conversationWithTracker(m));
-			break;
-		}
-		default: System.out.println("default CurrentCommand");
+				break;
+			}
+			case PeerCommands.COM_ADDSEED: {
+				Message m = createMessageFromCurrentCommand();
+				processMessageFromTracker(reporter.conversationWithTracker(m));
+				break;
+			}
+			case PeerCommands.COM_QUERY: {
+				Message m = createMessageFromCurrentCommand();
+				processMessageFromTracker(reporter.conversationWithTracker(m));
+				break;
+			}
+			case PeerCommands.COM_DOWNLOAD: {
+				Message m = createMessageFromCurrentCommand();
+				if (m != null)
+					processMessageFromTracker(reporter.conversationWithTracker(m));
+				break;
+			}
+			case PeerCommands.COM_SHOW: {
+				FileInfo[] fileList = Peer.db.getLocalSharedFiles();
+				for (FileInfo f: fileList)
+					System.out.println(f.fileName);
+				break;
+			}
+			case PeerCommands.COM_QUIT: {
+				shell.close();
+				Message m = createMessageFromCurrentCommand();
+				processMessageFromTracker(reporter.conversationWithTracker(m));
+				break;
+			}
+			default: ;
 		}
 	}
 
@@ -161,33 +161,29 @@ public class PeerController implements PeerControllerIface {
 	public void processMessageFromTracker(Message response) {
 
 		switch (response.getOpCode()) {
-		case Message.OP_SEND_CONF: {
-			chunkSize=((MessageConf) response).getChunkSize();
-			System.out.println(chunkSize);
-			break;
+			case Message.OP_SEND_CONF: {
+				chunkSize=((MessageConf) response).getChunkSize();
+				break;
+			}
+			case Message.OP_ADD_SEED_ACK: {
+				break;
+			}
+			case Message.OP_FILE_LIST: {
+				recordQueryResult(((MessageFileInfo)response).getFileList());
+				printQueryResult();
+				break;
+			}
+			case Message.OP_REMOVE_SEED_ACK: {
+				seeder.closeSocket();
+				break;
+			}
+			
+			case Message.OP_SEED_LIST: {
+				downloadFileFromSeeds( ((MessageSeedInfo)response).getSeedList(), ((MessageSeedInfo)response).getFileHash());
+				break;
+			}
+			default: ;
 		}
-		case Message.OP_ADD_SEED_ACK: {
-			System.out.println(response.getOpCodeString());
-			break;
-		}
-		case Message.OP_FILE_LIST: {
-			recordQueryResult(((MessageFileInfo)response).getFileList());
-			printQueryResult();
-			break;
-		}
-		case Message.OP_REMOVE_SEED_ACK: {
-			seeder.closeSocket();
-			break;
-		}
-		
-		case Message.OP_SEED_LIST: {
-			downloadFileFromSeeds( ((MessageSeedInfo)response).getSeedList(), ((MessageSeedInfo)response).getFileHash());
-			break;
-		}
-		default:
-			;
-		}
-
 	}
 
 	@Override
@@ -200,7 +196,6 @@ public class PeerController implements PeerControllerIface {
 		for (FileInfo s : queryResult) {
 				System.out.println(s);
 		}
-
 	}
 
 	@Override
@@ -216,8 +211,9 @@ public class PeerController implements PeerControllerIface {
 	@Override
 	public void downloadFileFromSeeds(InetSocketAddress[] seedList, String targetFileHash) {
 		downloader = new Downloader(this,lookupQueryResult(targetFileHash)[0],chunkSize);
-		downloader.downloadFile(seedList);
 		seeder.setCurrentDownloader(downloader);
+		downloader.downloadFile(seedList);
+		seeder.setCurrentDownloader(null);
 	}
 
 	public void listenSeeder() {
@@ -227,6 +223,5 @@ public class PeerController implements PeerControllerIface {
 		seeder.setCurrentDownloader(null);
 	}
 
-	
 
 }

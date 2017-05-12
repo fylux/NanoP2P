@@ -24,17 +24,21 @@ public abstract class Message {
 	 */
 	protected static final int FIELD_INDEX_BYTES = 4;
 	
-	public static final int SIZE_TYPE = 1;
+	
+	public static final int SIZE_ERROR = FIELD_TYPE_BYTES;
 	public static final int SIZE_REQ_LIST = FIELD_TYPE_BYTES + FIELD_HASH_BYTES;
 	public static final int SIZE_REQ_DATA = FIELD_TYPE_BYTES + FIELD_INDEX_BYTES;
 	
 	public static final int MAX_SIZE_LIST = 
 			FIELD_TYPE_BYTES + FIELD_N_CHUNKS_BYTES + FIELD_INDEX_BYTES*2^31;
 	
+	
+	
 	public static final int TYPE_REQ_LIST = 1;
 	public static final int TYPE_LIST = 2;
 	public static final int TYPE_REQ_DATA = 3;
 	public static final int TYPE_DATA = 4;
+	public static final int TYPE_ERROR = 5;
 	
 	private int type;
 	
@@ -56,12 +60,20 @@ public abstract class Message {
 		return new MessageHash(array);
 	}
 	
-	public static MessageChunkList makeChunkList(int nChunk,int ...index){
+	public static MessageChunkList makeChunkList(int nChunk){
+		return new MessageChunkList(nChunk);
+	}
+	
+	public static MessageChunkList makeChunkList(int nChunk,int index[]){
 		return new MessageChunkList(nChunk,index);
 	}
 	
 	public static MessageChunkList makeChunkList(DataInputStream dis){
-		return new MessageChunkList(dis);
+		MessageChunkList m = new MessageChunkList();
+		if (m.fromStream(dis))
+			return m;
+		else
+			return null;
 	}
 	
 	public static MessageChunk makeReqData(int index){
@@ -73,11 +85,26 @@ public abstract class Message {
 	}
 	
 	public static MessageData makeChunkData(byte[] dataArray,int index){
-		return new MessageData(dataArray,index);
+		MessageData m = new MessageData(index);
+		if (m.fromByteArray(dataArray))
+			return m;
+		else
+			return null;
 	}
 	
-
 	public static MessageData makeChunkData(DataInputStream dis,int chunkSize){
-		return new MessageData(dis,chunkSize);
+		MessageData m = new MessageData();
+		if (m.fromStream(dis,chunkSize))
+			return m;
+		else
+			return null;
+	}
+	
+	public static MessageError makeError(byte[] array) {
+		return new MessageError(array);
+	}
+	
+	public static MessageError makeError() {
+		return new MessageError();
 	}
 }

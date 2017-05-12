@@ -4,10 +4,8 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.net.SocketAddress;
 
 import P2P.PeerPeer.Client.Downloader;
-import P2P.util.PeerDatabase;
 
 
 public class Seeder implements Runnable {
@@ -45,11 +43,7 @@ public class Seeder implements Runnable {
     	return portRequested;
     }
     
-    /** 
-	 * Función del hilo principal del servidor. 	
-	 */
-	public void run()
-	{
+	public void run() {
 		boolean alive = true;
 		while (alive) {
 			try {
@@ -62,12 +56,7 @@ public class Seeder implements Runnable {
 		}
 	}
     
-    /**
-     * Inicio del hilo del servidor.
-     */
-    public void start()
-    {
-        // Inicia esta clase como un hilo
+    public void start() {
     	new Thread(this).start();
     }
     

@@ -1,8 +1,6 @@
 package P2P.PeerPeer.Message;
 
 import java.nio.ByteBuffer;
-import java.util.LinkedList;
-import java.util.List;
 
 public class MessageChunk extends Message {
 
@@ -33,7 +31,8 @@ public class MessageChunk extends Message {
 
 	protected boolean fromByteArray(byte[] array) {
 		if (array.length != SIZE_REQ_DATA || ((int)array[0] != TYPE_REQ_DATA)) {
-			throw new RuntimeException("Invalid CHUNK message");
+			//Invalid CHUNK message
+			return false;
 		}
 		ByteBuffer buf = ByteBuffer.wrap(array);
 		try {

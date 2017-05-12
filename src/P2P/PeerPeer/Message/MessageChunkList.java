@@ -4,11 +4,6 @@ import java.io.DataInputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.LinkedList;
-import java.util.List;
-
-import javax.xml.bind.DatatypeConverter;
-
-import P2P.util.FileDigest;
 
 public class MessageChunkList extends Message {
 
@@ -17,19 +12,30 @@ public class MessageChunkList extends Message {
 	private LinkedList<Integer> index;
 	
 	
+	public MessageChunkList() {
+		this.index=new LinkedList<Integer>();
+	}
+	
 	public MessageChunkList(DataInputStream dis) {
 		this.index=new LinkedList<Integer>();
 		fromStream(dis);
 	}
 	
-	public MessageChunkList(int nChunk,int ... index) {
+	public MessageChunkList(int nChunk) {
+		this.index=new LinkedList<Integer>();
+		this.nChunk=nChunk;
+		all = nChunk == -1;
+		setType(TYPE_LIST);
+	}
+	
+	public MessageChunkList(int nChunk,int chunks[]) {
 		this.index=new LinkedList<Integer>();
 		this.nChunk=nChunk;
 		all = nChunk == -1;
 		setType(TYPE_LIST);
 		
-		for (int i : index) {
-			this.index.add(i);
+		for (int i =0; i < chunks.length ; i++) {
+			this.index.add(chunks[i]);
 		}
 		
 		
@@ -65,7 +71,6 @@ public class MessageChunkList extends Message {
 		buf.put((byte)this.getType());
 		buf.putInt(nChunk);
 		
-		//si all está activado index será tendrá length cero
 		for (Integer i : index){
 			buf.putInt(i);
 		}
@@ -77,12 +82,14 @@ public class MessageChunkList extends Message {
 	protected boolean fromStream(DataInputStream dis) {
 		try {
 			if (dis.read() != (byte)TYPE_LIST) {
-				System.err.println("Error: invalid FileList message");
+				//Error: invalid FileList message
+				return false;
 			}
 		} catch (IOException e1) {
 			e1.printStackTrace();
 			return false;
 		}
+		
 		byte[] nChunk_bytes = new byte[FIELD_N_CHUNKS_BYTES];
 		try {
 			dis.read(nChunk_bytes);
@@ -90,11 +97,13 @@ public class MessageChunkList extends Message {
 			e1.printStackTrace();
 			return false;
 		}
+		
 		int nChunk = ByteBuffer.wrap(nChunk_bytes).getInt();
 		all = nChunk == -1;
 
 		if (all)
 			return true;
+		
 		
 		for (int i = 0; i < nChunk; i++) {
 			try {
