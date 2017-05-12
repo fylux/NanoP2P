@@ -19,8 +19,7 @@ public class Seeder implements Runnable {
 	private short chunkSize;
 
 
-    public Seeder(short chunkSize)
-    {
+    public Seeder(short chunkSize) {
     	try {
 			serverSocket = new ServerSocket();
 		} catch (IOException e) {
@@ -51,12 +50,14 @@ public class Seeder implements Runnable {
 	 */
 	public void run()
 	{
-		while (true) {
+		boolean alive = true;
+		while (alive) {
 			try {
 				Socket clientSocket = serverSocket.accept();
 				new SeederThread(clientSocket, currentDownloader, chunkSize).start();
 			} catch (IOException e1) {
-				System.out.println("Error accepting in client socket");
+				System.out.println("Seed killed");
+				alive = false;
 			}
 		}
 	}

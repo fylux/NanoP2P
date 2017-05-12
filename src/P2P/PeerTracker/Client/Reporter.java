@@ -66,8 +66,10 @@ public class Reporter implements ReporterIface {
 
 		DatagramPacket pckt = new DatagramPacket(buf, buf.length);
 		try {
+			socket.setSoTimeout(100);
 			socket.receive(pckt);
 		} catch (IOException e) {
+			return null;
 		}
 
 		return Message.parseResponse(pckt.getData());
@@ -75,8 +77,12 @@ public class Reporter implements ReporterIface {
 
 	@Override
 	public Message conversationWithTracker(Message request) {
+		Message m;
+		do {
 		sendMessageToTracker(peerTrackerSocket, request, addr);
-		return receiveMessageFromTracker(peerTrackerSocket);
+		 m = receiveMessageFromTracker(peerTrackerSocket);
+		} while(m == null);
+		return m;
 	}
 
 }

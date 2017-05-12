@@ -52,6 +52,7 @@ public class DownloaderThread  extends Thread {
 
 	//It receives a message containing a chunk and it is stored in the file
 	private void receiveAndWriteChunk() {
+		//TODO
     }
 
 	private void requestChunkList() {
@@ -76,32 +77,24 @@ public class DownloaderThread  extends Thread {
     //Main code to request chunk lists and chunks
     public void run() {
     	int bookedChunk = -1;
+    	MessageChunk reqChunk;
     	requestChunkList();
     	receiveAndProcessChunkList();
     	bookedChunk = downloader.bookNextChunk(chunkList);
-    	System.out.println("book: "+ bookedChunk);
+    	
     	while (!downloader.isDownloadComplete()){
-    		
-    		if (bookedChunk == -1) {
-    			//Ask peer repeteadly and then ask downloader
-    			while(bookedChunk!=-1){
-    				requestChunkList();
-    				receiveAndProcessChunkList();
-    				bookedChunk = downloader.bookNextChunk(chunkList);
-    			}
-    			//no rompo aquí porque puede ser que por otro thread
-    			//se esten descargando los trozos restantes
-    			//y me devuelva un -2
-    		}
-    		else if (bookedChunk == -2) {
-    			//Ask downloader repeteadly if is complete, if so break
-    			while(downloader.isDownloadComplete());
-    			break;
-    		}
-    		//si bookedChunk es un trozo valido..    			
-    		MessageChunk reqChunk;
-        	MessageData dataChunk;
-        	//Req data bookedChunk
+	    	//Ask peer repeteadly and then ask downloader
+	    	if (bookedChunk == -1) {
+	    	    requestChunkList();
+	    	    receiveAndProcessChunkList();
+	    	    bookedChunk = downloader.bookNextChunk(chunkList);
+	    	    continue;
+	    	}
+	    	else if (bookedChunk == -2) {
+	    	   bookedChunk = downloader.bookNextChunk(chunkList);
+	    	   continue;
+	    	}
+
         	reqChunk= Message.makeReqData(bookedChunk);
         
         	try {
@@ -111,32 +104,25 @@ public class DownloaderThread  extends Thread {
     			e.printStackTrace();
     		}
         	
-        	//debe esperar el chunk pedido
         	
+        	//TODO ¿reqChunk.getIndex() es igual a bookedChunk?
         	int chunkSize=downloader.getChunkSize();
-        	if (reqChunk.getIndex()==downloader.getTotalChunks()){
+        	if (reqChunk.getIndex()==downloader.getTotalChunks()) //if is the last chunk
         		chunkSize=downloader.getSizeLastChunk();
-        		writeData(Message.makeChunkData(dis,chunkSize));	
-        		}
-        	else{	
-        			writeData(Message.makeChunkData(dis,chunkSize));
-        			requestChunkList();
-    				receiveAndProcessChunkList();
-        		} 
         	
-        		
+    		writeData(Message.makeChunkData(dis,chunkSize));	
+    		downloader.setChunkDownloaded(reqChunk.getIndex(),true);
         	
-    		bookedChunk = downloader.bookNextChunk(chunkList);
+             		
+        	receiveAndWriteChunk();
+        	bookedChunk = downloader.bookNextChunk(chunkList);
     	}
     	
     	try {
 			downloadSocket.close();
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-    	
-    	
     }  
 
     private void writeData(MessageData message){
@@ -153,16 +139,14 @@ public class DownloaderThread  extends Thread {
 		int dataSize=downloader.getChunkSize();
 		//si tengo la ultima parte, descargo solo lo que pese
 		if (index==parts)
-		{
 			dataSize=lastSize;
-		}
+		
 		 	
        	File f2 = new File(path);
 		try {
 			if (!f2.exists())
 				f2.createNewFile();
-			RandomAccessFile rfo;
-			rfo = new RandomAccessFile(f2,"rw");
+			RandomAccessFile rfo =  new RandomAccessFile(f2,"rw");
 			rfo.seek(pos);
 			rfo.write(data);	
 			rfo.close();
@@ -172,11 +156,11 @@ public class DownloaderThread  extends Thread {
 			e.printStackTrace();
 		}		
 		
-		printByteArray(data);
+		//printByteArray(data);
 		pos+=dataSize;
     }
     
-    private void printByteArray(byte[] data){
+   /* private void printByteArray(byte[] data){
     	String file_string = "";
 
 		for(int i = 0; i < data.length; i++)
@@ -186,9 +170,6 @@ public class DownloaderThread  extends Thread {
 
 		System.out.println("cadena: " + file_string);
 
-    }
+    }*/
     
 }
-/**
--no consigo hacer que la ejecución se detenga
-**/

@@ -24,6 +24,7 @@ public abstract class Message {
 	 */
 	protected static final int FIELD_INDEX_BYTES = 4;
 	
+	public static final int SIZE_TYPE = 1;
 	public static final int SIZE_REQ_LIST = FIELD_TYPE_BYTES + FIELD_HASH_BYTES;
 	public static final int SIZE_REQ_DATA = FIELD_TYPE_BYTES + FIELD_INDEX_BYTES;
 	

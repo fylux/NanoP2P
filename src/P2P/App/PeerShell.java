@@ -32,14 +32,18 @@ public class PeerShell implements PeerShellIface {
 	@Override
 	public void readCommand() {
 		do {
-		
-		args = null;
-		String[] words = in.nextLine().split(" ");
-		command = PeerCommands.stringToCommand(words[0]);
-
-		if (words.length > 1)
-			args = Arrays.copyOfRange(words,1, words.length);
-		
+			args = null;
+			String[] words;
+			do {
+				System.out.print("> ");
+				words = in.nextLine().split(" ");
+			} while(words[0].isEmpty());
+			
+			command = PeerCommands.stringToCommand(words[0]);
+	
+			if (words.length > 1)
+				args = Arrays.copyOfRange(words,1, words.length);
+			
 		} while(!analyzeLine());
 	}
 

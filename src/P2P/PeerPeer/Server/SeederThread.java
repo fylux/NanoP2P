@@ -1,5 +1,6 @@
 package P2P.PeerPeer.Server;
 
+import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
@@ -60,24 +61,35 @@ public class SeederThread extends Thread {
     public void run() {
     	
     	//bucle infinito
+    FileInfo fileData = null;
     while(true){
-	    	byte[] buf_list = new byte[Message.SIZE_REQ_LIST];
+	    	byte buffer;
 	    	try {
-				dis.readFully(buf_list);
+				buffer=dis.readByte();
 			} catch (IOException e1) {
-				e1.printStackTrace();
-				System.err.println("SeederThread Cerrado.");
+				System.out.println("SeederThread Cerrado Correctamente.");
 				break;
 			}
+	    	MessageHash fileRequested = null;
+	    	MessageChunk requestedChunk = null;
 	    	
-	    	MessageHash fileRequested = Message.makeReqList(buf_list);
-	    	fileHash = fileRequested.getHash();
+	    	Message m = analizeType(buffer);
+	    	if (m == null)
+	    		break;
 	    	
-	    	FileInfo fileData = isFileReachable();
-	    	
-	    	if (fileData != null)
-	    	{
-		    	MessageChunkList chunkList=Message.makeChunkList(-1);
+	    	if ( m instanceof MessageHash) {
+	    		
+	    		fileRequested=(MessageHash)m;
+	    		fileHash = fileRequested.getHash();
+	    		fileData = isFileReachable();
+		    	
+	    		MessageChunkList chunkList;
+		    	if (fileData != null)
+		    		chunkList=Message.makeChunkList(-1);
+		    	else {
+		    		int chunks[] = downloader.getChunksDownloadedFromSeeders();
+		    		chunkList=Message.makeChunkList(chunks.length,chunks);
+		    	}
 		    	
 		        try {
 		    		dos.write(chunkList.toByteArray());
@@ -85,45 +97,30 @@ public class SeederThread extends Thread {
 		    	}catch (IOException e) {
 		    		e.printStackTrace();
 		    	}
-	    	
-		        
-	    	
-	    	
-		        byte[] buf_chunk = new byte[Message.SIZE_REQ_DATA];
-		    	try {
-					dis.readFully(buf_chunk);
-				} catch (IOException e1) {
-					e1.printStackTrace();
-				}
+					     	
+	    	}
+	    	else if ( m instanceof MessageChunk) {
+	    		requestedChunk=(MessageChunk)m;
 		    	
-		    	
-		    	MessageChunk requestedChunk = Message.makeReqData(buf_chunk);
-		    	int index = requestedChunk.getIndex();
-		
-				
-				
-				
+			    int index = requestedChunk.getIndex();
+		    
 				byte[] data=readDataFile(index,fileData);
-				
+					
 				//leer la parte index del fichero en data 
-				
 				MessageData dataChunk = Message.makeChunkData(data,index);
-			
+				
 				try {
-		    		dos.write(dataChunk.toByteArray());
-		    		dos.flush();
+			    	dos.write(dataChunk.toByteArray());
+			    	dos.flush();
 		    	}catch (IOException e) {
 		    		e.printStackTrace();
 		    	}
-				
-				
 	    	}
-    	}	
-    
-    	System.out.println("fueraaa");
+	    }	
     }
 	
 	private FileInfo isFileReachable() {
+		//TODO actualizar la db para ver si ha borrado el archivo
 		FileInfo fi[] = Peer.db.getLocalSharedFiles();
     	for (FileInfo f : fi)
 			if (f.fileHash.equals(fileHash))
@@ -133,40 +130,30 @@ public class SeederThread extends Thread {
 	}
 	
 	private byte[] readDataFile(int index,FileInfo fileData){
-		
-		//TODO relacionar index con la partes del fichero
-			
-		// dado un tamaño de trozo
+		//TODO borrar atributo pos
 		int parts=getTotalChunks(fileData);
 		int lastSize=getSizeLastChunk(fileData);
 		
-		
 		int dataSize=chunkSize;
-		if (index==parts)
-		{
-			dataSize=lastSize;
-		}
+		if (index == parts)
+			dataSize = lastSize;
 		
-		String path=Peer.db.lookupFilePath(fileData.fileHash);
+		String path = Peer.db.lookupFilePath(fileData.fileHash);
 			
 		byte data[] = new byte[dataSize];
-		int lengUtil=0;
 		File file = new File(path);
 		RandomAccessFile rfi;
 		try {
 			rfi = new RandomAccessFile(file,"r");
 			rfi.seek(pos);//Nos situamos en la posición
-			lengUtil=rfi.read(data,0,data.length); //Leemos el trozo
+			rfi.read(data,0,data.length); //Leemos el trozo
 			rfi.close();
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 		} catch (IOException e) {
 			e.printStackTrace();
 		} 
-		System.out.println("data.length: "+ data.length);
-		System.out.println("utilbyts: "+lengUtil);
-		System.out.println("pos: " + pos);
-		printByteArray(data);
+		//printByteArray(data);
 		pos+=dataSize;
 				
 		return data;
@@ -187,7 +174,7 @@ public class SeederThread extends Thread {
 			return size;
 	}
 	
-	 private void printByteArray(byte[] data){
+	 /*private void printByteArray(byte[] data){
 	    	String file_string = "";
 
 			for(int i = 0; i < data.length; i++)
@@ -195,5 +182,48 @@ public class SeederThread extends Thread {
 					file_string += (char)data[i];
 			   }
 			System.out.println("cadena: " + file_string);
+	 }*/
+
+	 private Message analizeType(byte type){
+		 byte[] type_array = new byte[1];
+		 type_array[0] = type;
+		 byte[] buffer;
+		 byte[] buff_final;
+		 ByteArrayOutputStream outputStream = new ByteArrayOutputStream( );
+		
+		 if ((int)type == Message.TYPE_REQ_LIST) 
+			 buffer= new byte[Message.SIZE_REQ_LIST-1];
+			 
+		 else if ((int)type == Message.TYPE_REQ_DATA) 
+			 buffer= new byte[Message.SIZE_REQ_DATA-1];
+		 else
+			 throw new RuntimeException("Invalid message: Type = "+(int)type);
+		 
+		 
+		try{
+			dis.readFully(buffer);
+			outputStream.write(type_array);
+			outputStream.write(buffer);
+		} catch (IOException e) {
+			System.err.println("Fallo de concatenacion");
+		}
+		
+		Message m=null;
+		
+		 if ((int)type == Message.TYPE_REQ_LIST) {
+			 buff_final = new byte[Message.SIZE_REQ_LIST];
+			 buff_final = outputStream.toByteArray();
+			 m = Message.makeReqList(buff_final);
+		 }
+			 
+		 else if ((int)type == Message.TYPE_REQ_DATA) {
+			 buff_final = new byte[Message.SIZE_REQ_DATA];
+			 buff_final = outputStream.toByteArray();
+			 m = Message.makeReqData(buff_final);
+		 }
+		
+		return m;
+		
 	 }
+	 
 }
