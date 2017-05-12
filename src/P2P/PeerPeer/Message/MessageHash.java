@@ -1,8 +1,6 @@
 package P2P.PeerPeer.Message;
 
-import java.io.DataInputStream;
 import java.nio.ByteBuffer;
-
 import P2P.util.FileDigest;
 
 public class MessageHash extends Message{
@@ -41,7 +39,8 @@ public class MessageHash extends Message{
 	protected boolean fromByteArray(byte[] array) {
 
 		if (array.length != SIZE_REQ_LIST || ((int)array[0] != TYPE_REQ_LIST)) {
-			throw new RuntimeException("Invalid HASH message");
+			//Invalid HASH message
+			return false;
 		}
 		ByteBuffer buf = ByteBuffer.wrap(array);
 		try {
