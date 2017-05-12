@@ -72,18 +72,17 @@ public class Downloader implements DownloaderIface {
 
 	@Override
 	public boolean downloadFile(InetSocketAddress[] seedList) {
-		/*threads = new DownloaderThread[seedList.length];
+		threads = new DownloaderThread[seedList.length];
 		for (int i = 0; i < seedList.length; i++) {
 			threads[i] = new DownloaderThread(this,seedList[i]);
 			threads[i].start();
-		}*/
-		DownloaderThread d = new DownloaderThread(this,seedList[0]);
-		d.start();
+		}
+
 		joinDownloaderThreads();
 		return false;
 	}
 
-	public int bookNextChunk(List<Integer> list) {
+	public synchronized int bookNextChunk(List<Integer> list) {
 	
 		//TODO si la lista esta vacia puede ser que lo tenga todo o no tenga nada
 		if (list.isEmpty()){
@@ -107,7 +106,7 @@ public class Downloader implements DownloaderIface {
 		return -2; //All the chunks are being downloaded
 	}
 	
-	public void setChunkDownloaded(int chunk, boolean achieved){
+	public synchronized void setChunkDownloaded(int chunk, boolean achieved){
 		if (achieved) {
 			if (nChunksDownloaded == 0) { //Add_seed
 				peerController.setCurrentCommand(PeerCommands.COM_ADDSEED);
@@ -120,7 +119,7 @@ public class Downloader implements DownloaderIface {
 			} 
 			nChunksDownloaded++;
 			chunkState[chunk-1] = DOWNLOADED;
-			System.out.println("Downloading: "+nChunksDownloaded*100/getTotalChunks()+"%");
+			System.out.println("Downloading: "+nChunksDownloaded*100/getTotalChunks()+"%, chunk: "+chunk+" "+achieved);
 		
 			if (isDownloadComplete())
 				end();
@@ -130,7 +129,7 @@ public class Downloader implements DownloaderIface {
 	}
 	
 	@Override
-	public int[] getChunksDownloadedFromSeeders() {
+	public synchronized int[] getChunksDownloadedFromSeeders() {
 		LinkedList<Integer> chunks = new LinkedList<Integer>();
 		for (int i : chunkState)
 			if (i == DOWNLOADED)
@@ -144,7 +143,7 @@ public class Downloader implements DownloaderIface {
 	}
 
 	@Override
-	public boolean isDownloadComplete() {
+	public synchronized boolean isDownloadComplete() {
 		return nChunksDownloaded == getTotalChunks();
 		/*for (int i : chunkState)
 			if (i != DOWNLOADED)
@@ -154,12 +153,12 @@ public class Downloader implements DownloaderIface {
 
 	@Override
 	public void joinDownloaderThreads() {
-		/*try {
+		try {
 			for (DownloaderThread t : threads)
 					t.join();
 		} catch (InterruptedException e) {
 			e.printStackTrace();
-		}*/
+		}
 	}
 
 	@Override
@@ -168,7 +167,7 @@ public class Downloader implements DownloaderIface {
 	}
 	
 	public void end() {
-		Peer.db.addDownloadedFile(file);;
+		Peer.db.addDownloadedFile(file);
 	
 		String computedHash = FileDigest.getChecksumHexString(
 				FileDigest.computeFileChecksum(

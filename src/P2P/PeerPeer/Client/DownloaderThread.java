@@ -83,6 +83,7 @@ public class DownloaderThread  extends Thread {
     	bookedChunk = downloader.bookNextChunk(chunkList);
     	
     	while (!downloader.isDownloadComplete()){
+    		System.out.println(Thread.currentThread().getId()+" "+bookedChunk);
 	    	//Ask peer repeteadly and then ask downloader
 	    	if (bookedChunk == -1) {
 	    	    requestChunkList();
@@ -107,6 +108,7 @@ public class DownloaderThread  extends Thread {
         	
         	//TODO ¿reqChunk.getIndex() es igual a bookedChunk?
         	int chunkSize=downloader.getChunkSize();
+        	
         	if (reqChunk.getIndex()==downloader.getTotalChunks()) //if is the last chunk
         		chunkSize=downloader.getSizeLastChunk();
         	
