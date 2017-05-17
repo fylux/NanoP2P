@@ -1,44 +1,48 @@
 package P2P.PeerPeer.Message;
 
 import java.nio.ByteBuffer;
-import java.util.LinkedList;
-import java.util.List;
 
 public class MessageChunk extends Message {
 
-	private List<Integer> index;
-	public MessageChunk(int...index) {
-			
-		this.index=new LinkedList<Integer>();
-		for (int i : index) {
-			this.index.add(i);
-		}
+	private int index;
+	
+	public MessageChunk(byte[] array) {
+		fromByteArray(array);
 	}
 	
-	public List<Integer> getIndex() {
+	public MessageChunk(int index) {
+		setType(TYPE_REQ_DATA);
+		this.index=index;
+	}
+	
+	public int getIndex() {
 		return index;
 	}
 	
-	
-	
 	@Override
 	public byte[] toByteArray() {
-		int byteBufferLength = FIELD_TYPE_BYTES + index.size()*FIELD_INDEX_BYTES;
-
-		ByteBuffer buf = ByteBuffer.allocate(byteBufferLength);
+		ByteBuffer buf = ByteBuffer.allocate(SIZE_REQ_DATA);
 
 		buf.put((byte)this.getType());
-		for (Integer i : index) {
-			buf.put((byte)i.intValue());
-		}
+		buf.putInt(getIndex());
 
 		return buf.array();
 	}
 
-	@Override
 	protected boolean fromByteArray(byte[] array) {
-		// TODO Auto-generated method stub
-		return false;
+		if (array.length != SIZE_REQ_DATA || ((int)array[0] != TYPE_REQ_DATA)) {
+			//Invalid CHUNK message
+			return false;
+		}
+		ByteBuffer buf = ByteBuffer.wrap(array);
+		try {
+			setType((int)buf.get());
+			index = buf.getInt();
+		} catch (RuntimeException e) {
+			e.printStackTrace();
+			return false;
+		}
+		return true;
 	}
 
 }

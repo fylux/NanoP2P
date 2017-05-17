@@ -1,15 +1,18 @@
 package P2P.PeerPeer.Message;
 
 import java.nio.ByteBuffer;
-
 import P2P.util.FileDigest;
 
 public class MessageHash extends Message{
 	
 	private String hash;
 	
-	public MessageHash(int type, String hash) {
-		setType(type);
+	public MessageHash(byte[] array) {
+		fromByteArray(array);
+	}
+	
+	public MessageHash(String hash) {
+		setType(TYPE_REQ_LIST);
 		setHash(hash);
 	}
 	
@@ -23,7 +26,7 @@ public class MessageHash extends Message{
 	
 	@Override
 	public byte[] toByteArray() {
-		int byteBufferLength = FIELD_TYPE_BYTES + FIELD_HASH_BYTES;
+		int byteBufferLength = SIZE_REQ_LIST;
 
 		ByteBuffer buf = ByteBuffer.allocate(byteBufferLength);
 
@@ -33,11 +36,11 @@ public class MessageHash extends Message{
 		return buf.array();
 	}
 
-	@Override
 	protected boolean fromByteArray(byte[] array) {
-		if (array.length < FIELD_TYPE_BYTES + FIELD_HASH_BYTES) {
-			System.err.println("Contenido del byte array "+array+" no es mensaje con formato Hash");
-			throw new RuntimeException("Byte array no contiene un mensaje con formato Hash");
+
+		if (array.length != SIZE_REQ_LIST || ((int)array[0] != TYPE_REQ_LIST)) {
+			//Invalid HASH message
+			return false;
 		}
 		ByteBuffer buf = ByteBuffer.wrap(array);
 		try {

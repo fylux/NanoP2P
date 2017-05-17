@@ -32,14 +32,18 @@ public class PeerShell implements PeerShellIface {
 	@Override
 	public void readCommand() {
 		do {
-		
-		args = null;
-		String[] words = in.nextLine().split(" ");
-		command = PeerCommands.stringToCommand(words[0]);
-
-		if (words.length > 1)
-			args = Arrays.copyOfRange(words,1, words.length);
-		
+			args = null;
+			String[] words;
+			do {
+				System.out.print("> ");
+				words = in.nextLine().split(" ");
+			} while(words[0].isEmpty());
+			
+			command = PeerCommands.stringToCommand(words[0]);
+	
+			if (words.length > 1)
+				args = Arrays.copyOfRange(words,1, words.length);
+			
 		} while(!analyzeLine());
 	}
 
@@ -55,8 +59,7 @@ public class PeerShell implements PeerShellIface {
 			}
 			
 			case PeerCommands.COM_QUERY : {
-				if (args!=null && !ArraytoString().
-					matches("(-n ([a-z]|[A-Z])+)?(( )?-lt [0-9]+([K]|[M]|[G])B)?(( )?-ge [0-9]+(([K]|[M]|[G])B))?"))
+				if (args!=null && !analizeArgs())
 				{
 						System.out.println("entro");
 						PeerCommands.printQueryOptionsHelp();
@@ -67,10 +70,8 @@ public class PeerShell implements PeerShellIface {
 			default: return true;
 		}
 	}
-
 	
-	private String ArraytoString(){
-		
+	private String ArraytoString(){	
 		String s="";
 		for (String i : args) {
 			s+=i+" ";
@@ -79,4 +80,18 @@ public class PeerShell implements PeerShellIface {
 		return s;
 	}
 	
+	private boolean analizeArgs(){
+		String[] op=ArraytoString().split("-");
+		
+		//hago esto debido a que split me devuelve una cadena vacia
+		//en la primera posicion
+		int ini=0;
+		if (op[0].equals("")) ini=1;
+		
+		for (int i=ini;i<op.length;i++) {
+			if (!op[i].matches("(?i)(n ([a-z])+ ?)") && !op[i].matches("(lt|ge) [0-9]+ ([KMG])?B ?"))
+				return false;
+		}
+		return true;
+	}
 }

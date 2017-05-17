@@ -1,5 +1,7 @@
 package P2P.PeerPeer.Message;
 
+import java.io.DataInputStream;
+
 public abstract class Message {
 	
 	/**
@@ -13,24 +15,34 @@ public abstract class Message {
 	protected static final int FIELD_HASH_BYTES = 20;
 	
 	/**
-	 * Size of "n_chunks" field: byte (5 bytes)
+	 * Size of "n_chunks" field: byte (4 bytes)
 	 */
-	protected static final int FIELD_N_CHUNKS_BYTES = 5;
+	protected static final int FIELD_N_CHUNKS_BYTES = 4;
 	
 	/**
 	 * Size of "index" field: byte (4 bytes)
 	 */
-	protected static final int FIELD_INDEX_BYTES = 5;
+	protected static final int FIELD_INDEX_BYTES = 4;
+	
+	
+	public static final int SIZE_ERROR = FIELD_TYPE_BYTES;
+	public static final int SIZE_REQ_LIST = FIELD_TYPE_BYTES + FIELD_HASH_BYTES;
+	public static final int SIZE_REQ_DATA = FIELD_TYPE_BYTES + FIELD_INDEX_BYTES;
+	
+	public static final int MAX_SIZE_LIST = 
+			FIELD_TYPE_BYTES + FIELD_N_CHUNKS_BYTES + FIELD_INDEX_BYTES*2^31;
+	
+	
 	
 	public static final int TYPE_REQ_LIST = 1;
 	public static final int TYPE_LIST = 2;
 	public static final int TYPE_REQ_DATA = 3;
 	public static final int TYPE_DATA = 4;
+	public static final int TYPE_ERROR = 5;
 	
 	private int type;
 	
 	public abstract byte[] toByteArray();
-	protected abstract boolean fromByteArray(byte[] array);
 	
 	public int getType() {
 		return type;
@@ -41,32 +53,58 @@ public abstract class Message {
 	}
 	
 	public static MessageHash makeReqList(String hash) {
-		return new MessageHash(TYPE_REQ_LIST,hash);
+		return new MessageHash(hash);
 	}
 	
 	public static MessageHash makeReqList(byte[] array) {
-		MessageHash m = new MessageHash(TYPE_REQ_LIST,null);
-		m.fromByteArray(array);
-		return m;
+		return new MessageHash(array);
 	}
 	
-	public static MessageFileChunk makeChunkList(int nChunk,int ...index){
-		MessageFileChunk m = new MessageFileChunk(TYPE_LIST,nChunk,index);
-		return m;
+	public static MessageChunkList makeChunkList(int nChunk){
+		return new MessageChunkList(nChunk);
 	}
 	
-	public static MessageFileChunk makeChunkList(byte[] buf){
-		MessageFileChunk m = new MessageFileChunk(buf);
-		return m;
+	public static MessageChunkList makeChunkList(int nChunk,int index[]){
+		return new MessageChunkList(nChunk,index);
 	}
 	
-	
-	public static MessageChunk makeReqData(){
-		return null;
+	public static MessageChunkList makeChunkList(DataInputStream dis){
+		MessageChunkList m = new MessageChunkList();
+		if (m.fromStream(dis))
+			return m;
+		else
+			return null;
 	}
 	
-	public static MessageData makeChunkData(){
-		return null;
+	public static MessageChunk makeReqData(int index){
+		return new MessageChunk(index);
 	}
 	
+	public static MessageChunk makeReqData(byte[] array){
+		return new MessageChunk(array);
+	}
+	
+	public static MessageData makeChunkData(byte[] dataArray,int index){
+		MessageData m = new MessageData(index);
+		if (m.fromByteArray(dataArray))
+			return m;
+		else
+			return null;
+	}
+	
+	public static MessageData makeChunkData(DataInputStream dis,int chunkSize){
+		MessageData m = new MessageData();
+		if (m.fromStream(dis,chunkSize))
+			return m;
+		else
+			return null;
+	}
+	
+	public static MessageError makeError(byte[] array) {
+		return new MessageError(array);
+	}
+	
+	public static MessageError makeError() {
+		return new MessageError();
+	}
 }

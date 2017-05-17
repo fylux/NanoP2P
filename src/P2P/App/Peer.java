@@ -28,7 +28,7 @@ public class Peer {
 
 		// Begin conversation with tracker by getting configuration (chunk size)
 		commander.getConfigFromTracker();
-		
+
 		//crear con el seeder
 		commander.listenSeeder();
 		

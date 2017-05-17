@@ -1,41 +1,86 @@
 package P2P.PeerPeer.Message;
 
-import java.lang.reflect.Array;
-import java.util.Arrays;
-import java.util.LinkedList;
-import java.util.List;
+import java.io.DataInputStream;
+import java.io.IOException;
+import java.nio.ByteBuffer;
 
 public class MessageData extends Message {
 
-	private List<Integer> index;
+	private int index;
 	private byte[] data;
-	
-	public List<Integer> getIndex() {
-		return index;
-	}
 
 	public byte[] getData() {
 		return data;
 	}
+	
+	public int getIndex() {
+		return index;
+	}
 
-	public MessageData(int type,byte[] data,int...index) {
-		this.index=new LinkedList<Integer>();
-		setType(type);
-		this.data=Arrays.copyOf(data, data.length);
-		for (Integer i : index) {
-			this.index.add(i);
-		}
+	public MessageData() {
+		setType(TYPE_DATA);
+	}
+	
+	public MessageData(int index) {
+		this.index=index;
+		setType(TYPE_DATA);
+	}
+	
+	public MessageData(DataInputStream dis,int chunkSize){
+		fromStream(dis,chunkSize);
 	}
 	
 	@Override
 	public byte[] toByteArray() {
-		// TODO Auto-generated method stub
-		return null;
+		ByteBuffer buf = ByteBuffer.allocate(FIELD_TYPE_BYTES+FIELD_INDEX_BYTES+data.length);
+		
+		buf.put((byte)getType());
+		buf.putInt(index);
+		buf.put(data);
+		
+		return buf.array();
 	}
 
-	@Override
-	protected boolean fromByteArray(byte[] array) {
-		// TODO Auto-generated method stub
-		return false;
+	protected boolean fromByteArray(byte[] dataArray) {
+		
+		ByteBuffer buf = ByteBuffer.wrap(dataArray);
+		try {
+			data = new byte[dataArray.length];
+			buf.get(data);
+			return true;
+		} catch (RuntimeException e) {
+			e.printStackTrace();
+			return false;
+		}
 	}
+	
+	protected boolean fromStream(DataInputStream dis,int chunkSize) {
+		try {
+			if (dis.read() != (byte)TYPE_DATA) {
+				//Error: invalid FileData message
+				return false;
+			}
+		} catch (IOException e1) {
+			return false;
+		}
+		
+		byte[] index_bytes = new byte[FIELD_INDEX_BYTES];
+		try {
+			dis.readFully(index_bytes);
+		} catch (IOException e1) {
+			return false;
+		}
+		index = ByteBuffer.wrap(index_bytes).getInt();
+		data = new byte[chunkSize];
+		
+		try {
+			dis.readFully(data);
+		} catch (IOException e) {
+			return false;
+		}
+		
+		return true;
+	}
+
+
 }
