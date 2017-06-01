@@ -286,7 +286,7 @@ public class MessageFileInfo extends Message {
 		return FIELD_FILEHASH_BYTES + FIELD_FILESIZE_BYTES + 
 				FIELD_FILENAMELEN_BYTES + fileInfo.fileName.getBytes().length;
 	}
-
+	//TODO AQUI
 	public static int computeNextFragmentNumFiles(FileInfo[] files, int currentIndex) {
 		int fragmentPayloadSize = 0;
 		int i;

@@ -37,7 +37,6 @@ public class SeederThread extends Thread {
 		} catch (IOException e) {
 			System.out.println("Error creating Seeder Thread");
 		}
-
 	}
 
 	public void closeSocket() {
@@ -47,26 +46,70 @@ public class SeederThread extends Thread {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		
-	}
-	
-	// Devuelve la lista de trozos que tiene del fichero solicitado
-	public void sendChunkList(String fileHashStr) {
 	}
 
-	// Envía por el socket el chunk solicitado por el DownloaderThread
-	protected void sendChunk(int chunkNumber, String fileHashStr) {
+	/**
+	 * Send chunkList of the request file 
+	 */
+	public void sendChunkList() {
+		FileInfo fileData = isFileReachable();
+		byte response[];
+		MessageChunkList chunkList = null;
+
+		if (fileData != null) {
+			//We have the complete file
+			chunkList = Message.makeChunkList(-1);
+			response = chunkList.toByteArray();
+		} else if (downloader == null || !fileHash.equals(downloader.getTargetFile().fileHash)) {
+			//Request for a file which cannot be served
+			response = Message.makeError().toByteArray();
+		} else {
+			//We are downloading the file
+			int chunks[] = downloader.getChunksDownloadedFromSeeders();
+			chunkList = Message.makeChunkList(chunks.length, chunks);
+			response = chunkList.toByteArray();
+		}
+
+		try {
+			dos.write(response);
+			dos.flush();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 
-	// Método principal que coordina la recepción y envío de mensajes
+	protected void sendChunk(int index) {
+		FileInfo fileData = isFileReachable();
+		byte response[];
+
+		if (fileData != null || (downloader != null && fileHash.equals(downloader.getTargetFile().fileHash))) {
+
+			if (fileData == null)
+				fileData = downloader.getTargetFile();
+
+			byte data[] = readDataFile(index, fileData);
+
+			if (data != null)
+				response = Message.makeChunkData(data, index).toByteArray();
+			else
+				response = Message.makeError().toByteArray();
+		} else {
+			response = Message.makeError().toByteArray();
+		}
+		try {
+			dos.write(response);
+			dos.flush();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+
 	public void run() {
-		FileInfo fileData = null;
 		while (true) {
 			byte buffer;
 			try {
 				buffer = dis.readByte();
 			} catch (IOException e1) {
-				System.out.println("SeederThread Cerrado Correctamente.");
 				break;
 			}
 			MessageHash fileRequested = null;
@@ -75,109 +118,51 @@ public class SeederThread extends Thread {
 			Message m = analizeType(buffer);
 			if (m == null)
 				break;
-
-			if (m instanceof MessageHash) {
-
+			
+			else if (m instanceof MessageHash) {
 				fileRequested = (MessageHash) m;
 				fileHash = fileRequested.getHash();
-				fileData = isFileReachable();
-				byte response[];
-				MessageChunkList chunkList=null;
-				
-				if (fileData != null) {
-					chunkList = Message.makeChunkList(-1);
-					response = chunkList.toByteArray();
-				}
-				else if (!fileHash.equals(downloader.getTargetFile().fileHash)) {
-					response = Message.makeError().toByteArray();
-				}
-				else {
-					int chunks[] = downloader.getChunksDownloadedFromSeeders();
-					chunkList = Message.makeChunkList(chunks.length, chunks);
-					response = chunkList.toByteArray();
-				}
 
-				try {
-					dos.write(response);
-					dos.flush();
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
+				sendChunkList();
 
 			} else if (m instanceof MessageChunk) {
 				requestedChunk = (MessageChunk) m;
-
 				int index = requestedChunk.getIndex();
-
-				fileData = isFileReachable();
-				byte response[];
-				
-				if (fileData != null || (downloader != null && fileHash.equals(downloader.getTargetFile().fileHash))) {
-					//Aqui esta la clave
-					if (fileData == null) {
-						//Sabemos que es nulo
-						fileData = downloader.getTargetFile();
-					}
-					//Acuerdate del if(alive)
-					//Aqui es donde toca investigar (la lista que le damos es la correcta)
-					//Posibilidades:
-					//-nos piden un index que no tenemos (+1?)
-					//
-					//Se pilla en readData
-					byte data[] =  readDataFile(index, fileData);
-					
-					if (data != null)
-						response = Message.makeChunkData(data, index).toByteArray();
-					else {
-						//Aqui no llega
-						response = Message.makeError().toByteArray();	
-					}
-					
-				}
-				else{
-					response = Message.makeError().toByteArray();
-				}
-				try {
-					dos.write(response);
-					dos.flush();
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
+				sendChunk(index);
 			}
 		}
 	}
 
 	private FileInfo isFileReachable() {
 		FileInfo shared[] = Peer.db.getLocalSharedFiles();
-		FileInfo file=null;
-    	for (FileInfo f : shared)
+		FileInfo file = null;
+		for (FileInfo f : shared)
 			if (f.fileHash.equals(fileHash)) {
-				 file = f;
-				 break;
+				file = f;
+				break;
 			}
-    	if (file == null)
-    		return null;
-    	
-    	File check = new File(Peer.db.getSharedFolderPath()+"/"+file.fileName);
-    	if (check.exists() && !check.isDirectory())
-    		return file;
-    	else {
-    		//The file was removed
-    		return null;
-    	}
-    		
+		if (file == null)
+			return null;
+
+		File check = new File(Peer.db.getSharedFolderPath() + "/" + file.fileName);
+		if (check.exists() && !check.isDirectory())
+			return file;
+		else {
+			// The file was removed
+			return null;
+		}
+
 	}
 
 	private byte[] readDataFile(int index, FileInfo fileData) {
 		int parts = getTotalChunks(fileData);
 		int lastSize = getSizeLastChunk(fileData);
 
-		int pos=(index-1)*chunkSize;
+		int pos = (index - 1) * chunkSize;
 		int dataSize = chunkSize;
 		if (index == parts)
 			dataSize = lastSize;
 
-		//String path = Peer.db.lookupFilePath(fileData.fileHash);
 		String path = Peer.db.getSharedFolderPath() + "/" + fileData.fileName;
 		byte data[] = new byte[dataSize];
 		File file = new File(path);
@@ -185,11 +170,10 @@ public class SeederThread extends Thread {
 
 		try {
 			rfi = new RandomAccessFile(file, "r");
-			rfi.seek(pos);// Nos situamos en la posici�n
-			rfi.read(data, 0, data.length); // Leemos el trozo
+			rfi.seek(pos);
+			rfi.read(data, 0, data.length);
 			rfi.close();
 		} catch (FileNotFoundException e) {
-			//Aqui no llega
 			return null;
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -212,13 +196,11 @@ public class SeederThread extends Thread {
 			return size;
 	}
 
-	/*
-	 * private void printByteArray(byte[] data){ String file_string = "";
-	 * 
-	 * for(int i = 0; i < data.length; i++) { file_string += (char)data[i]; }
-	 * System.out.println("cadena: " + file_string); }
+	
+	/**
+	 * Analyze if the message received is a request of list, of chunk
+	 * or an error.
 	 */
-
 	private Message analizeType(byte type) {
 		byte[] type_array = new byte[1];
 		type_array[0] = type;
@@ -239,7 +221,7 @@ public class SeederThread extends Thread {
 			outputStream.write(type_array);
 			outputStream.write(buffer);
 		} catch (IOException e) {
-			System.err.println("Fallo de concatenacion");
+			System.err.println("Buffer writing error");
 		}
 
 		Message m = null;

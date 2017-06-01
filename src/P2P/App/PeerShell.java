@@ -4,25 +4,23 @@ import java.util.Arrays;
 import java.util.Scanner;
 
 public class PeerShell implements PeerShellIface {
-	
+
 	private byte command;
 	private String[] args;
-	
 	private Scanner in;
-	
+
 	public PeerShell() {
 		in = new Scanner(System.in);
 	}
-	
+
 	public void close() {
 		in.close();
 	}
-	
+
 	@Override
 	public byte getCommand() {
 		return command;
 	}
-	
 
 	@Override
 	public String[] getCommandArguments() {
@@ -37,59 +35,57 @@ public class PeerShell implements PeerShellIface {
 			do {
 				System.out.print("> ");
 				words = in.nextLine().split(" ");
-			} while(words[0].isEmpty());
-			
+			} while (words[0].isEmpty()); //Avoid empty input
+
 			command = PeerCommands.stringToCommand(words[0]);
-	
+
 			if (words.length > 1)
-				args = Arrays.copyOfRange(words,1, words.length);
-			
-		} while(!analyzeLine());
+				args = Arrays.copyOfRange(words, 1, words.length);
+
+		} while (!analyzeLine());
 	}
 
 	private boolean analyzeLine() {
-		switch(command) {
-			case PeerCommands.COM_INVALID : {
-				PeerCommands.printCommandsHelp();
+		switch (command) {
+		case PeerCommands.COM_INVALID: {
+			PeerCommands.printCommandsHelp();
+			return false;
+		}
+		case PeerCommands.COM_DOWNLOAD: {
+			// Show rules
+			return args != null && args.length == 1;
+		}
+
+		case PeerCommands.COM_QUERY: {
+			if (args != null && !analizeArgs()) {
+				PeerCommands.printQueryOptionsHelp();
 				return false;
-			}
-			case PeerCommands.COM_DOWNLOAD : {
-				//Show rules
-				return args != null && args.length == 1;
-			}
-			
-			case PeerCommands.COM_QUERY : {
-				if (args!=null && !analizeArgs())
-				{
-						System.out.println("entro");
-						PeerCommands.printQueryOptionsHelp();
-						return false;
-				}
-				else return true;
-			}
-			default: return true;
+			} else
+				return true;
+		}
+		default:
+			return true;
 		}
 	}
-	
-	private String ArraytoString(){	
-		String s="";
+
+	private String argsToString() {
+		String s = "";
 		for (String i : args) {
-			s+=i+" ";
+			s += i + " ";
 		}
-		s=s.substring(0,s.length()-1);
+		s = s.substring(0, s.length() - 1);
 		return s;
 	}
-	
-	private boolean analizeArgs(){
-		String[] op=ArraytoString().split("-");
-		
-		//hago esto debido a que split me devuelve una cadena vacia
-		//en la primera posicion
-		int ini=0;
-		if (op[0].equals("")) ini=1;
-		
-		for (int i=ini;i<op.length;i++) {
-			if (!op[i].matches("(?i)(n ([a-z])+ ?)") && !op[i].matches("(lt|ge) [0-9]+ ([KMG])?B ?"))
+
+	private boolean analizeArgs() {
+		String[] op = argsToString().split("-");
+
+		int ini = 0;
+		if (op[0].equals(""))
+			ini = 1;
+
+		for (int i = ini; i < op.length; i++) {
+			if (!op[i].matches("(?i)(n ([^ ])+ ?)") && !op[i].matches("(lt|ge) [0-9]+ ([KMG])?B ?"))
 				return false;
 		}
 		return true;

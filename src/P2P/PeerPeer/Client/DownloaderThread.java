@@ -44,13 +44,16 @@ public class DownloaderThread extends Thread {
 			dis = new DataInputStream(downloadSocket.getInputStream());
 			error = false;
 		} catch (IOException e) {
-			System.out.println("Unable to connect with seed "+seed);
+			System.out.println("Unable to connect with seed " + seed);
 			error = true;
-			
+
 		}
 	}
 
-	// It receives a message containing a chunk and it is stored in the file
+	/**
+	 * It receives a message containing a chunk and it is stored in the file
+	 * @return Chunk was downloaded
+	 */
 	private boolean receiveAndWriteChunk() {
 		int chunkSize = downloader.getChunkSize();
 
@@ -80,6 +83,10 @@ public class DownloaderThread extends Thread {
 		}
 	}
 
+	/**
+	 * Receives chunk lists 
+	 * @return The message is not an error
+	 */
 	private boolean receiveAndProcessChunkList() {
 		chunkList = Message.makeChunkList(dis);
 		return chunkList != null;
@@ -92,34 +99,34 @@ public class DownloaderThread extends Thread {
 
 	// Main code to request chunk lists and chunks
 	public void run() {
-		if (error)
+		if (error) //Unable to connect
 			return;
-		
-		bookedChunk = -1;
 
+		bookedChunk = -1;
 		MessageChunk reqChunk;
 		requestChunkList();
+		
 		if (receiveAndProcessChunkList())
 			bookedChunk = downloader.bookNextChunk(chunkList);
 
 		while (!downloader.isDownloadComplete() && !error) {
-	
+
 			// Ask peer repeteadly and then ask downloader
-			if (bookedChunk == -1) {
+			if (bookedChunk == Downloader.NEW_LIST) {
 				requestChunkList();
 				if (!receiveAndProcessChunkList())
 					error = true;
 				else
 					bookedChunk = downloader.bookNextChunk(chunkList);
-				
 				continue;
-			} else if (bookedChunk == -2) {
+				
+			} else if (bookedChunk == Downloader.ALL_ASSIGNED) {
 				bookedChunk = downloader.bookNextChunk(chunkList);
 				continue;
 			}
 
+			//Request chunk
 			reqChunk = Message.makeReqData(bookedChunk);
-
 			try {
 				dos.write(reqChunk.toByteArray());
 				dos.flush();
@@ -127,7 +134,7 @@ public class DownloaderThread extends Thread {
 				downloader.setChunkDownloaded(reqChunk.getIndex(), false);
 				break;
 			}
-
+			
 			if (!receiveAndWriteChunk())
 				error = true;
 			else

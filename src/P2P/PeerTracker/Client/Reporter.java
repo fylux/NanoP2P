@@ -2,8 +2,10 @@ package P2P.PeerTracker.Client;
 
 import java.io.IOException;
 import java.net.*;
+import java.util.Vector;
 
 import P2P.PeerTracker.Message.Message;
+import P2P.PeerTracker.Message.MessageFileInfo;
 
 public class Reporter implements ReporterIface {
 
@@ -16,12 +18,14 @@ public class Reporter implements ReporterIface {
 	 * UDP socket for communication with tracker
 	 */
 	private DatagramSocket peerTrackerSocket;
-
-	private int attemps;
-	
 	private InetSocketAddress addr;
+	private Vector<Message> fragments;
+	
+	private int attemps;
 	public final int PORT = 4450;
 	public final int MAX_MSG_SIZE_BYTES = 1024;
+	public final int N_ATTEMPS = 12;
+	
 
 	/***
 	 * 
@@ -38,20 +42,20 @@ public class Reporter implements ReporterIface {
 			System.err.println("Reporter cannot create datagram socket for communication with tracker");
 			System.exit(-1);
 		}
+		fragments = new Vector<Message>();
 	}
 
 	public void end() {
 		// Close datagram socket with tracker
 		peerTrackerSocket.close();
-		
+
 	}
 
 	@Override
 	public boolean sendMessageToTracker(DatagramSocket socket, Message request, InetSocketAddress trackerAddress) {
-		
-		 byte[] buf = request.toByteArray();
-		
-		
+
+		byte[] buf = request.toByteArray();
+
 		DatagramPacket pckt = new DatagramPacket(buf, buf.length, addr);
 		try {
 			socket.send(pckt);
@@ -68,6 +72,7 @@ public class Reporter implements ReporterIface {
 
 		DatagramPacket pckt = new DatagramPacket(buf, buf.length);
 		try {
+
 			socket.setSoTimeout(100);
 			socket.receive(pckt);
 		} catch (IOException e) {
@@ -79,18 +84,44 @@ public class Reporter implements ReporterIface {
 
 	@Override
 	public Message conversationWithTracker(Message request) {
-		attemps = 3;
-		
+		attemps = N_ATTEMPS;
+		fragments.clear();
 		Message m;
 		do {
-		sendMessageToTracker(peerTrackerSocket, request, addr);
-		m = receiveMessageFromTracker(peerTrackerSocket);
-		attemps--;
-		} while(m == null && attemps > 0);
+			sendMessageToTracker(peerTrackerSocket, request, addr);
+			do { //Send each fragment
+				m = receiveMessageFromTracker(peerTrackerSocket);
+			} while (!isProcessFragments(m));
+
+			attemps--;
+		} while (m == null && attemps > 0);
+
 		if (attemps == 0)
 			return null;
 		else
-			return m;
+			return buildFullMessage(m);
 	}
 
+	private boolean isProcessFragments(Message x) {
+
+		//If the file need to be fragmented
+		if (x instanceof MessageFileInfo) {
+			attemps = N_ATTEMPS;
+			MessageFileInfo m = (MessageFileInfo) x;
+			fragments.addElement(x);
+			return fragments.size() == m.getTotalFragments();
+		}
+		return true;
+	}
+
+	/**
+	 * Assemble the fragments of the message
+	 */
+	private Message buildFullMessage(Message x) {
+		if ((x instanceof MessageFileInfo) && fragments.size() > 1) {
+			fragments.get(0).reassemble(fragments);
+			return fragments.get(0);
+		}
+		return x;
+	}
 }
