@@ -1,4 +1,6 @@
 # NanoP2P
+[![Build Status](https://travis-ci.org/fylux/NanoP2P.svg?branch=master)](https://travis-ci.org/fylux/NanoP2P)
+
 P2P Client, Server and Protocol
 
 ## License
