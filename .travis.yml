@@ -1,0 +1,7 @@
+language : java
+
+before_script:
+  -mkdir bin
+
+script :
+  - javac -d bin -sourcepath src src/P2P/App/*
